@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biorefinería Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Idea de diseño: hoja de ingeniería. Barra superior tipo cajetín de plano (progreso, puntos, tiempo),
+   unidades de proceso con etiquetas de equipo (M-101, R-201) y tarjetas sobrias. El naranja se reserva
+   para la acción y la transformación; el azul, para el proceso; el verde, para la biomasa. */
+:root{
+  --bg:#f3f6f2; --surface:#ffffff; --surface-2:#e9f0e8; --ink:#13251c; --muted:#4a5f54; --line:#c5d3c8;
+  --green-900:#0f3d2e; --green-300:#9bd18a; --green-tint:#e2f2dc;
+  --accent:#b84e00; --on-accent:#ffffff; --accent-tint:#fdeede;
+  --blue:#1f5f8b; --blue-tint:#e3eef6;
+  --ok:#17693a; --ok-tint:#e1f3e6; --bad:#a8261c; --bad-tint:#fbe9e6; --info:#1f5f8b; --info-tint:#e3eef6;
+  --head-bg:#0f3d2e; --head-ink:#f1f7f0; --head-line:#2f6350;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible",Verdana,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:6px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1813; --surface:#14241c; --surface-2:#1b3026; --ink:#e7f0e9; --muted:#a5b9ad; --line:#2f4a3c;
+    --green-900:#bfe6b1; --green-300:#9bd18a; --green-tint:#1d3a2b;
+    --accent:#f29244; --on-accent:#1c0e02; --accent-tint:#3a2412;
+    --blue:#7cbbe6; --blue-tint:#16303f;
+    --ok:#7fd69b; --ok-tint:#163524; --bad:#ff9a8e; --bad-tint:#3d1a16; --info:#7cbbe6; --info-tint:#16303f;
+    --head-bg:#0a2219; --head-ink:#f1f7f0; --head-line:#2f6350;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1813; --surface:#14241c; --surface-2:#1b3026; --ink:#e7f0e9; --muted:#a5b9ad; --line:#2f4a3c;
+  --green-900:#bfe6b1; --green-300:#9bd18a; --green-tint:#1d3a2b;
+  --accent:#f29244; --on-accent:#1c0e02; --accent-tint:#3a2412;
+  --blue:#7cbbe6; --blue-tint:#16303f;
+  --ok:#7fd69b; --ok-tint:#163524; --bad:#ff9a8e; --bad-tint:#3d1a16; --info:#7cbbe6; --info-tint:#16303f;
+  --head-bg:#0a2219; --head-ink:#f1f7f0; --head-line:#2f6350;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:700;text-transform:uppercase}
+h2{font-size:2rem}
+h3{font-size:1.45rem}
+h4{font-size:1.15rem;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.02em}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.stack{display:flex;flex-direction:column;gap:16px}
+.stack-s{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.grow{flex:1 1 auto}
+.measure{max-width:68ch}
+
+/* Cajetín superior */
+.tb{background:var(--head-bg);color:var(--head-ink);position:sticky;top:0;z-index:10;border-bottom:3px solid var(--accent)}
+.tb-in{max-width:1180px;margin:0 auto;padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.brand{display:flex;align-items:baseline;gap:8px;font-family:var(--f-display);font-weight:700;font-size:1.25rem;text-transform:uppercase;letter-spacing:.04em}
+.brand .mono{opacity:.8;border:1px solid var(--head-line);padding:1px 6px;border-radius:3px}
+.steps{display:flex;flex-wrap:wrap;gap:4px;flex:1 1 auto}
+.step{background:transparent;border:1px solid var(--head-line);color:var(--head-ink);border-radius:4px;padding:5px 10px;font-family:var(--f-display);font-weight:600;font-size:1.05rem;letter-spacing:.03em;display:flex;gap:6px;align-items:center}
+.step[aria-current="page"]{background:var(--head-ink);color:#0f3d2e;border-color:var(--head-ink)}
+.step .mk{font-family:var(--f-mono);font-size:.75rem}
+.cells{display:flex;gap:0;border:1px solid var(--head-line);border-radius:4px;overflow:hidden}
+.cell{padding:3px 10px;border-right:1px solid var(--head-line);display:flex;flex-direction:column;min-width:74px}
+.cell:last-child{border-right:0}
+.cell b{font-family:var(--f-mono);font-weight:500;font-size:.95rem;font-variant-numeric:tabular-nums}
+.cell span{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8}
+.pbar{height:5px;background:var(--head-line);border-radius:3px;overflow:hidden;margin-top:3px;width:88px}
+.pbar i{display:block;height:100%;background:var(--green-300)}
+.tb .ghost{border:1px solid var(--head-line);background:transparent;color:var(--head-ink);border-radius:4px;padding:6px 10px;font-size:.85rem}
+@media (max-width:1000px){.tb{position:static}}
+
+main{max-width:1180px;margin:0 auto;padding:24px 16px 40px;display:flex;flex-direction:column;gap:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.card.tight{padding:14px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--blue)}
+.lvl-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:12px}
+.lvl-meta{display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);border-radius:3px;padding:2px 8px;background:var(--surface);white-space:nowrap}
+.tag.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-tint)}
+.tag.pend{border-style:dashed}
+
+.btn{background:var(--accent);color:var(--on-accent);border:0;border-radius:var(--r);padding:10px 18px;font-weight:700;font-size:1rem;transition:transform .12s ease,filter .12s ease}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(1px)}
+.btn.sec{background:var(--surface);color:var(--ink);border:2px solid var(--ink)}
+.btn.blue{background:var(--blue);color:var(--surface)}
+.btn.sm{padding:6px 12px;font-size:.9rem}
+.btn:disabled{opacity:.5}
+.navrow{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;border-top:1px solid var(--line);padding-top:16px}
+
+.fb{border-left:5px solid var(--info);background:var(--info-tint);padding:10px 14px;border-radius:0 var(--r) var(--r) 0;display:flex;flex-direction:column;gap:6px;animation:fbin .25s ease}
+.fb.ok{border-color:var(--ok);background:var(--ok-tint)}
+.fb.bad{border-color:var(--bad);background:var(--bad-tint)}
+.fb strong{font-family:var(--f-display);font-size:1.1rem;letter-spacing:.03em;text-transform:uppercase}
+.fb.ok strong{color:var(--ok)} .fb.bad strong{color:var(--bad)} .fb.info strong{color:var(--info)}
+@keyframes fbin{from{transform:translateY(-4px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Inicio */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:stretch}
+@media (max-width:860px){.hero{grid-template-columns:1fr}}
+.hero-sub{font-family:var(--f-display);font-size:1.6rem;font-weight:500;color:var(--accent)}
+.plano{align-self:start;border:2px solid var(--ink);border-radius:2px;background:var(--surface);display:flex;flex-direction:column}
+.plano-body{padding:16px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;flex:1}
+.plano-col{display:flex;flex-direction:column;gap:10px;align-items:center}
+.plano-units{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:1.5px dashed var(--blue);padding:12px;border-radius:4px}
+.unit-mini{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--blue)}
+.plano-foot{display:grid;grid-template-columns:2fr 1fr 1fr;border-top:2px solid var(--ink)}
+.plano-foot div{padding:4px 8px;border-right:1px solid var(--ink);font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase}
+.plano-foot div:last-child{border-right:0}
+.ico{width:44px;height:44px;flex:none}
+.ico svg,.gly svg{width:100%;height:100%;display:block}
+.ico.res{color:var(--ok)} .ico.pro{color:var(--accent)} .ico.tec{color:var(--blue)}
+.arrow{font-family:var(--f-mono);color:var(--muted);font-size:1.2rem}
+.lvl-list{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:860px){.lvl-list{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.lvl-list{grid-template-columns:1fr}}
+.lvl-item{border-top:4px solid var(--blue);padding-top:8px}
+.lvl-item:nth-child(2){border-color:var(--green-300)} .lvl-item:nth-child(3){border-color:var(--accent)} .lvl-item:nth-child(4){border-color:var(--ink)}
+.note-ia{border:1px solid var(--line);border-left:5px solid var(--blue);background:var(--surface);padding:10px 14px;font-size:.9rem;border-radius:0 var(--r) var(--r) 0}
+ol.inst{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+
+/* Nivel 1 */
+.trays{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:860px){.trays{grid-template-columns:1fr}}
+.tray{border:1px solid var(--line);border-radius:var(--r);padding:10px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+.tray-cards{display:flex;flex-direction:column;gap:6px}
+.cardbtn{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:8px 10px;width:100%;min-height:60px}
+.cardbtn:hover:not(:disabled){border-color:var(--ink)}
+.cardbtn[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);background:var(--accent-tint)}
+.cardbtn:disabled{opacity:.45;border-style:dashed}
+.cardbtn b{display:block;line-height:1.2}
+.cardbtn small{color:var(--muted);line-height:1.2;display:block}
+.lines{display:flex;flex-direction:column;gap:10px}
+.line{border:1px solid var(--line);border-radius:var(--r);padding:10px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.line.done{border-color:var(--ok)}
+.line-row{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr auto;gap:8px;align-items:center}
+@media (max-width:760px){.line-row{grid-template-columns:1fr}.line-row .arrow{display:none}}
+.slot{min-height:58px;border:2px dashed var(--muted);border-radius:var(--r);background:var(--bg);padding:6px 10px;text-align:left;display:flex;align-items:center;gap:8px;width:100%}
+.slot.fill{border-style:solid;border-color:var(--ink);background:var(--surface)}
+.slot.target{border-color:var(--accent);background:var(--accent-tint)}
+.slot.bad{border-color:var(--bad)}
+.slot .ico{width:34px;height:34px}
+.slot small{display:block;color:var(--muted);font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase}
+.line-n{font-family:var(--f-mono);font-size:.8rem;writing-mode:horizontal-tb}
+
+/* Opciones de desafío */
+.parte{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.parte legend{font-weight:700;padding:0;margin-bottom:6px}
+.op{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:10px 12px;width:100%}
+.op:hover:not(:disabled){border-color:var(--ink)}
+.op[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-tint)}
+.op .mk{font-family:var(--f-mono);flex:none;width:1.4em}
+.op.is-ok{border-color:var(--ok);background:var(--ok-tint);opacity:1}
+.op.is-x{opacity:.55;text-decoration:line-through;text-decoration-color:var(--bad)}
+.op:disabled:not(.is-ok):not(.is-x){opacity:.6}
+.scen{background:var(--surface-2);border-radius:var(--r);padding:12px 14px;border:1px solid var(--line)}
+
+/* Nivel 2 */
+.est-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:760px){.est-tabs{grid-template-columns:1fr 1fr}}
+.est-tab{background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:8px 10px;text-align:left;display:flex;gap:8px;align-items:center}
+.est-tab[aria-selected="true"]{border-color:var(--blue);background:var(--blue-tint)}
+.est-tab .ico{width:36px;height:36px}
+.est-tab b{font-family:var(--f-display);font-size:1.15rem;display:block;line-height:1.1}
+.subtabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid var(--ink)}
+.subtab{background:transparent;border:0;border-bottom:4px solid transparent;padding:8px 14px;font-family:var(--f-display);font-size:1.15rem;font-weight:600;margin-bottom:-2px}
+.subtab[aria-selected="true"]{border-color:var(--accent);color:var(--accent)}
+.pfd{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 10px}
+.unit{flex:1 0 150px;max-width:230px;display:flex;flex-direction:column;align-items:center;gap:4px;border:2px dashed var(--muted);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center;position:relative}
+.unit.set{border:2px solid var(--blue);background:var(--surface)}
+.unit.next{border-color:var(--accent);background:var(--accent-tint)}
+.unit.sel{box-shadow:0 0 0 3px var(--blue-tint)}
+.unit .gly{width:52px;height:52px;color:var(--blue)}
+.unit .io{font-size:.74rem;color:var(--muted);line-height:1.2;min-height:1.8em}
+.unit .io.in::before{content:"↓ "} .unit .io.out::before{content:"↳ "} .unit .io:empty::before{content:""}
+.unit b{line-height:1.15;font-size:.95rem}
+.pfd-arrow{align-self:center;font-family:var(--f-mono);color:var(--muted);flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface);border:2px solid var(--ink);border-radius:999px;padding:6px 14px;font-size:.95rem}
+.chip:hover{background:var(--accent-tint)}
+.ficha details{border-top:1px solid var(--line);padding:8px 0}
+.ficha summary{font-weight:700;cursor:pointer}
+.ficha details p{margin-top:6px}
+.vars{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:860px){.vars{grid-template-columns:1fr}}
+.seg{border:0;padding:0;margin:0;min-width:0}
+.seg legend{font-weight:700;padding:0;margin-bottom:4px}
+.seg-in{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{border:2px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:.92rem;cursor:pointer;background:var(--surface);display:flex;gap:6px;align-items:center}
+.seg input{accent-color:var(--blue);margin:0}
+.seg label:has(input:checked){border-color:var(--blue);background:var(--blue-tint)}
+.seg label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.ind{display:flex;flex-direction:column;gap:4px}
+.meter{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.meter i{height:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:2px}
+.meter i.on{background:var(--blue);border-color:var(--blue)}
+.meter i.ref{border-color:var(--ink)}
+.ind-lab{display:flex;justify-content:space-between;gap:8px;font-size:.92rem}
+.ind-lab span:last-child{font-family:var(--f-mono);font-size:.8rem}
+ul.notes{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px;font-size:.95rem}
+
+/* Nivel 3 */
+.substeps{display:flex;flex-wrap:wrap;gap:6px}
+.substep{border:2px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 12px;font-family:var(--f-display);font-size:1.05rem;font-weight:600;display:flex;gap:6px}
+.substep[aria-current="step"]{border-color:var(--accent);background:var(--accent-tint)}
+.substep:disabled{opacity:.5}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:760px){.res-grid{grid-template-columns:1fr}}
+.pick{background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;display:flex;flex-direction:column;gap:8px}
+.pick[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-tint)}
+.pick:hover{border-color:var(--ink)}
+.tablewrap{overflow-x:auto}
+table.mx{border-collapse:collapse;width:100%;min-width:620px}
+table.mx th,table.mx td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+table.mx thead th{background:var(--green-900);color:var(--surface);font-family:var(--f-display);font-size:1.1rem;font-weight:600}
+table.mx tbody th{font-weight:700;width:30%}
+table.mx tr.guia td{background:var(--info-tint);font-size:.92rem;border-left:5px solid var(--info)}
+.rate{display:flex;gap:4px;flex-wrap:wrap;border:0;padding:0;margin:0}
+.rate label{border:2px solid var(--line);border-radius:4px;padding:3px 8px;font-size:.88rem;cursor:pointer;display:flex;gap:4px;align-items:center}
+.rate input{margin:0;accent-color:var(--blue)}
+.rate label:has(input:checked){border-color:var(--blue);background:var(--blue-tint);font-weight:700}
+.rate label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+textarea{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:10px;resize:vertical;min-height:110px}
+textarea:focus{border-color:var(--blue)}
+label.fld{font-weight:700;display:block;margin-bottom:4px}
+.wc{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.radio-card{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--line);border-radius:var(--r);padding:10px 12px;cursor:pointer;background:var(--surface)}
+.radio-card:has(input:checked){border-color:var(--accent);background:var(--accent-tint)}
+.radio-card:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.radio-card input{margin-top:5px;accent-color:var(--accent)}
+table.rub{border-collapse:collapse;width:100%;min-width:560px}
+table.rub th,table.rub td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.rub thead th{background:var(--surface-2);font-family:var(--f-display);font-size:1.05rem}
+
+/* Cierre */
+.score{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}
+@media (max-width:700px){.score{grid-template-columns:1fr}}
+.big{font-family:var(--f-display);font-weight:700;font-size:5rem;line-height:.9;font-variant-numeric:tabular-nums}
+.big small{font-size:1.6rem;font-weight:500;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;font-size:.92rem}
+@media (max-width:520px){.bar{grid-template-columns:1fr 60px}.bar .track{grid-column:1/-1;order:3}}
+.track{height:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--blue)}
+.bar b{font-family:var(--f-mono);font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+ul.plain{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px}
+pre.rep{white-space:pre-wrap;word-break:break-word;font-family:var(--f-mono);font-size:.82rem;background:var(--surface-2);border:1px solid var(--line);padding:14px;border-radius:var(--r);max-height:460px;overflow:auto;margin:0}
+.confirm{background:var(--bad-tint);border:2px solid var(--bad);border-radius:var(--r);padding:12px 16px}
+footer.ft{max-width:1180px;margin:0 auto;padding:0 16px 32px}
+@media print{.tb,.navrow,footer.ft,main>*:not(#sec-rep),#sec-rep .row,#sec-rep p{display:none!important}body{background:#fff;color:#000}#sec-rep{border:0;padding:0}pre.rep{max-height:none;overflow:visible;border:0;background:#fff;color:#000;font-size:10pt}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* ===================== Iconografía ===================== */
+const SVG = (inner) => `<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${inner}</svg>`;
+const TXT = (x, y, t) => `<text x="${x}" y="${y}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="currentColor" stroke="none">${t}</text>`;
+const GLY = {
+  molino: SVG('<path d="M18 6h20l-5 10H23z"/><circle cx="28" cy="34" r="14"/><path d="M28 20v28M14 34h28"/>'),
+  alambique: SVG('<path d="M13 43V26c0-9 6-15 15-15s15 6 15 15v17z"/><path d="M28 11V5h16"/><path d="M19 52c0-3 3-3 3-6M27 52c0-3 3-3 3-6M35 52c0-3 3-3 3-6"/>'),
+  ducto: SVG('<path d="M8 48V24c0-9 6-14 13-14h6c8 0 13 5 13 14v8"/><path d="M40 32l-5-6M40 32l5-6"/><path d="M15 42c3-3-3-5 0-9M23 42c3-3-3-5 0-9"/>'),
+  condensador: SVG('<rect x="5" y="20" width="46" height="16" rx="8"/><path d="M10 28l5-5 5 10 5-10 5 10 5-10 5 10 5-5"/><path d="M18 20V9M38 36v11"/>'),
+  separador: SVG('<rect x="14" y="5" width="28" height="46" rx="10"/><path d="M14 24h28"/><path d="M20 12h16M20 18h16" stroke-dasharray="3 3"/><path d="M42 14h9M42 42h9"/>'),
+  tanque: SVG('<path d="M11 12h34v26c0 6-7 10-17 10S11 44 11 38z"/><path d="M28 4v30M19 34h18"/>'),
+  ph: SVG('<path d="M15 7h26M19 7v31c0 5 4 10 9 10s9-5 9-10V7"/><path d="M19 22h18"/>' + TXT(28, 38, 'pH')),
+  filtro: SVG('<rect x="10" y="8" width="36" height="36" rx="3"/><path d="M10 44L46 8" stroke-dasharray="4 3"/><path d="M28 44v8"/>'),
+  secador: SVG('<rect x="7" y="12" width="42" height="32" rx="4"/><path d="M13 23c5-5 9 5 15 0s9 5 15 0M13 34c5-5 9 5 15 0s9 5 15 0"/>'),
+  control: SVG('<circle cx="28" cy="28" r="19"/><path d="M9 28h38"/>' + TXT(28, 23, 'QI')),
+  digestor: SVG('<rect x="16" y="5" width="24" height="46" rx="12"/><path d="M16 19h24M16 37h24"/><path d="M21 26c5 3 9-3 14 0M21 31c5 3 9-3 14 0"/>'),
+  r_cit: SVG('<circle cx="28" cy="28" r="21"/><circle cx="28" cy="28" r="15"/><path d="M28 13v30M13 28h30M17.5 17.5l21 21M38.5 17.5l-21 21"/>'),
+  r_fru: SVG('<path d="M9 22c0 15 8 26 19 26s19-11 19-26z"/><path d="M15 22c0 11 6 20 13 20s13-9 13-20"/><path d="M28 22v-8c0-4 4-7 9-7"/>'),
+  r_ace: SVG('<rect x="14" y="14" width="28" height="36" rx="4"/><path d="M14 24h28M14 40h28M22 14V7h12v7"/><path d="M28 27c-3 4-3 7 0 9 3-2 3-5 0-9z"/>'),
+  r_pin: SVG('<path d="M28 51C26 35 22 20 12 7M28 51V5M28 51c2-16 6-31 16-44M28 51C22 41 14 35 5 31M28 51c6-10 14-16 23-20"/>'),
+  r_lig: SVG('<path d="M28 51C26 35 22 20 12 7M28 51V5M28 51c2-16 6-31 16-44M28 51C22 41 14 35 5 31M28 51c6-10 14-16 23-20"/>'),
+  p_ae: SVG('<path d="M22 5h12v9l5 8v24a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4V22l5-8z"/><path d="M17 31h22"/>'),
+  p_pe: SVG('<rect x="13" y="16" width="30" height="34" rx="5"/><path d="M18 16V7h20v9M13 30h30"/><circle cx="22" cy="38" r="1.3"/><circle cx="29" cy="43" r="1.3"/><circle cx="35" cy="37" r="1.3"/>'),
+  p_bd: SVG('<path d="M28 5c-9 12-15 19-15 28a15 15 0 0 0 30 0c0-9-6-16-15-28z"/><path d="M28 44c-4 0-6-3-6-6 0-4 4-5 6-10 2 5 6 6 6 10 0 3-2 6-6 6z"/>'),
+  p_ce: SVG('<rect x="9" y="9" width="38" height="38" rx="3"/><path d="M14 18c5-4 9 4 14 0s9 4 14 0M14 28c5-4 9 4 14 0s9 4 14 0M14 38c5-4 9 4 14 0s9 4 14 0"/>')
+};
+const TEC_GLY = { A: 'alambique', B: 'ph', C: 'tanque', D: 'digestor' };
+
+/* ===================== Nivel 1 ===================== */
+const RES = {
+  r_cit: { n: 'Cáscaras de cítricos', d: 'Naranja, limón, mandarina', car: 'Las cáscaras de cítricos concentran aceite esencial en las glándulas del flavedo (capa externa coloreada) y protopectina en el albedo (capa blanca); su fracción fibrosa lignificada es menor.' },
+  r_fru: { n: 'Cáscaras de frutas no cítricas', d: 'Maracuyá, mango, manzana', car: 'Estas cáscaras son ricas en protopectina de pared celular, pero no tienen glándulas con aceite esencial en cantidad aprovechable ni triglicéridos.' },
+  r_ace: { n: 'Aceite vegetal usado', d: 'Fritura y procesos alimentarios', car: 'El aceite vegetal usado está formado sobre todo por triglicéridos, con agua, sólidos y ácidos grasos libres generados durante su uso; no contiene polisacáridos ni fibra.' },
+  r_pin: { n: 'Rastrojo de piña', d: 'Hojas y tallos tras la cosecha', car: 'El rastrojo de piña es biomasa lignocelulósica: fibras de celulosa embebidas en hemicelulosa y lignina, sin fracción volátil ni lipídica relevante.' }
+};
+const TEC = {
+  A: { n: 'Hidrodestilación', d: 'Arrastre de volátiles con vapor de agua', prod: 'p_ae', compat: ['r_cit'],
+    req: 'La hidrodestilación arrastra con vapor de agua compuestos volátiles inmiscibles: necesita una matriz que contenga aceite esencial.',
+    pista: 'busca el residuo con glándulas de aceite esencial.', gen: 'separa una fracción volátil que condensa junto con el agua' },
+  B: { n: 'Extracción ácida', d: 'Hidrólisis ácida en caliente', prod: 'p_pe', compat: ['r_cit', 'r_fru'],
+    req: 'La extracción ácida en caliente solubiliza la protopectina de la pared celular: necesita un tejido vegetal rico en este polisacárido.',
+    pista: 'busca un residuo de fruta con pared celular rica en protopectina.', gen: 'libera un polisacárido gelificante que después se precipita con alcohol' },
+  C: { n: 'Transesterificación', d: 'Reacción con alcohol y catalizador', prod: 'p_bd', compat: ['r_ace'],
+    req: 'La transesterificación hace reaccionar triglicéridos con un alcohol de cadena corta: necesita una materia prima grasa.',
+    pista: 'busca el residuo formado por triglicéridos.', gen: 'convierte triglicéridos en ésteres metílicos de ácidos grasos y glicerol' },
+  D: { n: 'Extracción de celulosa', d: 'Separación de lignina y hemicelulosa', prod: 'p_ce', compat: ['r_pin'],
+    req: 'La extracción de celulosa retira lignina y hemicelulosa para concentrar las fibras: necesita biomasa lignocelulósica fibrosa.',
+    pista: 'busca el residuo fibroso compuesto por celulosa, hemicelulosa y lignina.', gen: 'retira lignina y hemicelulosa y conserva la fracción fibrosa' }
+};
+const PRO = {
+  p_ae: { n: 'Aceite esencial', d: 'Rico en terpenos como el limoneno' },
+  p_pe: { n: 'Pectinas', d: 'Polisacárido gelificante' },
+  p_bd: { n: 'Biodiésel', d: 'Ésteres metílicos de ácidos grasos' },
+  p_ce: { n: 'Fibras celulósicas', d: 'Para papel, empaques y compuestos' }
+};
+const N1_OK = {
+  A_r_cit: 'El flavedo de los cítricos contiene glándulas con aceite esencial rico en limoneno. El vapor lo arrastra y, al condensar, el aceite se separa del hidrolato porque es inmiscible y menos denso que el agua.',
+  B_r_cit: 'El albedo de los cítricos es una fuente comercial de pectina. Este mismo residuo admite también la hidrodestilación: una materia prima puede alimentar más de una ruta.',
+  B_r_fru: 'La pared celular de estas cáscaras contiene protopectina insoluble que el medio ácido caliente solubiliza. Las cáscaras de cítricos también sirven para esta ruta.',
+  C_r_ace: 'Los triglicéridos del aceite reaccionan con metanol y forman ésteres metílicos (biodiésel) y glicerol. La humedad y la acidez del aceite condicionan el resultado.',
+  D_r_pin: 'Las hojas de piña aportan fibras con alto contenido de celulosa. El tratamiento retira lignina y hemicelulosa para concentrarlas.'
+};
+const N1_ORD = { r: ['r_pin', 'r_cit', 'r_ace', 'r_fru'], t: ['C', 'A', 'D', 'B'], p: ['p_pe', 'p_ce', 'p_ae', 'p_bd'] };
+const CASC = {
+  pts: [4, 3, 2, 1],
+  escenario: 'Las cáscaras de cítricos pueden alimentar más de una ruta de valorización. La empresa quiere aprovechar el mismo lote para obtener dos productos.',
+  partes: [{ tipo: 'single', q: '¿Qué planteamiento es técnicamente más sólido?', ops: [
+    { id: 'a', ok: 1, t: 'Hidrodestilar primero y extraer pectina, por vía ácida, del sólido agotado.' },
+    { id: 'b', t: 'Extraer primero la pectina por vía ácida y después hidrodestilar el sólido.', fb: 'Durante la extracción ácida en caliente los terpenos se volatilizan sin ser recuperados y la cáscara suele secarse antes: el aceite se pierde. Pista: ¿qué fracción es más sensible al calor y al almacenamiento?' },
+    { id: 'c', t: 'Solo cabe una ruta, porque el aceite esencial y la pectina están en la misma fracción del tejido.', fb: 'Están en fracciones distintas: el aceite en las glándulas del flavedo y la protopectina sobre todo en el albedo. Pista: una extracción puede dejar disponible la otra fracción.' },
+    { id: 'd', t: 'Transesterificar el aceite esencial para obtener biodiésel y pectina como coproducto.', fb: 'El aceite esencial está formado por terpenos, no por triglicéridos: no hay sustrato para transesterificar. Pista: combina las dos rutas que validaste para este residuo.' }
+  ] }],
+  okMsg: 'El arrastre con vapor recupera primero la fracción volátil, que es la más fácil de perder. El sólido agotado conserva pared celular con pectina y puede pasar a la extracción ácida. El calentamiento previo puede modificar parte de la pectina, por lo que la calidad del segundo producto debe verificarse.'
+};
+
+/* ===================== Nivel 2 ===================== */
+const LV = { '-2': ['Mucho menor', '▼▼'], '-1': ['Menor', '▼'], '0': ['Similar a la referencia', '●'], '1': ['Mayor', '▲'], '2': ['Mucho mayor', '▲▲'] };
+const EST = {
+  A: {
+    n: 'Hidrodestilación de aceites esenciales', corto: 'Hidrodestilación', mp: 'Cáscaras de cítricos',
+    etapas: [
+      { n: 'Preparación de la materia prima', g: 'molino', tag: 'M-101', inl: 'Cáscaras de cítricos', d: 'Selección, lavado y troceado de las cáscaras para exponer las glándulas oleíferas del flavedo sin perder volátiles.', fin: 'acondicionar el material para exponer las glándulas de aceite' },
+      { n: 'Contacto con agua y calentamiento', g: 'alambique', tag: 'D-101', inl: 'Agua', out: 'Cáscara agotada', d: 'El material se sumerge en agua dentro del alambique y se calienta hasta ebullición.', fin: 'poner el material en contacto con agua y aportar calor' },
+      { n: 'Vaporización y arrastre', g: 'ducto', tag: 'L-101', d: 'El vapor de agua arrastra los compuestos volátiles. Como aceite y agua son inmiscibles, sus presiones de vapor se suman y la mezcla hierve por debajo de 100 °C a presión atmosférica.', fin: 'llevar los compuestos volátiles a la fase vapor junto con el agua' },
+      { n: 'Condensación', g: 'condensador', tag: 'E-101', inl: 'Agua de enfriamiento', d: 'El intercambiador retira calor y la mezcla de vapor de agua y aceite pasa a fase líquida.', fin: 'devolver la mezcla de vapores a fase líquida' },
+      { n: 'Separación del aceite y del hidrolato', g: 'separador', tag: 'S-101', out: 'Hidrolato', d: 'En el separador (vaso florentino) el aceite esencial, menos denso e inmiscible, flota sobre el hidrolato y se retira por la parte superior.', fin: 'separar dos líquidos inmiscibles por diferencia de densidad' }
+    ],
+    orden: [3, 0, 4, 2, 1], final: 'Aceite esencial',
+    ficha: [
+      ['Fundamento', 'El material vegetal se calienta sumergido en agua. El vapor generado arrastra los compuestos volátiles del aceite esencial; al ser inmiscibles con el agua, la mezcla hierve a una temperatura menor que la de cualquiera de sus componentes por separado. Tras condensar, el aceite se separa por densidad.'],
+      ['Materia prima y producto', 'Cáscaras de naranja, limón o mandarina. El producto es un aceite esencial rico en compuestos terpénicos, con limoneno como componente mayoritario. El hidrolato es un coproducto acuoso con trazas aromáticas.'],
+      ['Aplicaciones', 'Saborizantes y aromas para alimentos, cosmética y perfumería, productos aromáticos y de limpieza.'],
+      ['Limitaciones', 'Alto consumo energético por la evaporación de agua, rendimiento másico bajo (el aceite es una fracción pequeña de la cáscara), pérdidas de compuestos volátiles y posible alteración térmica o hidrolítica de componentes sensibles. La cáscara agotada húmeda requiere un destino.']
+    ],
+    inds: [['rec', 'Recuperación de aceite esencial'], ['ene', 'Consumo energético'], ['per', 'Conservación del perfil aromático']],
+    vars: [
+      { id: 'tp', n: 'Tamaño de partícula', ref: 1, ops: [
+        ['Trozos gruesos', { rec: -1 }, 'Con trozos gruesos el vapor accede con dificultad a las glándulas oleíferas: la difusión es lenta y parte del aceite queda retenido.'],
+        ['Troceado medio (referencia)'],
+        ['Molienda muy fina', { per: -1 }, 'La molienda muy fina rompe las glándulas antes de la extracción: se pierden volátiles durante la preparación y el material puede apelmazarse y sobrecalentarse en el alambique.']] },
+      { id: 'ra', n: 'Relación agua / materia prima', ref: 1, ops: [
+        ['Baja', { rec: -1, per: -1 }, 'Con poca agua el material puede adherirse al fondo caliente: el arrastre es incompleto y aumenta el riesgo de degradación térmica.'],
+        ['Referencia'],
+        ['Alta', { ene: 1 }, 'Más agua implica más masa por calentar y evaporar: sube la energía por unidad de aceite. Parte de los compuestos oxigenados, más polares, queda disuelta en el agua.']] },
+      { id: 'ti', n: 'Tiempo de extracción', ref: 1, ops: [
+        ['Corto', { rec: -1, ene: -1 }, 'La extracción se detiene antes de agotar el material: se ahorra energía, pero queda aceite sin recuperar.'],
+        ['Referencia'],
+        ['Prolongado', { ene: 1, per: -1 }, 'Una vez extraída la mayor parte del aceite, prolongar el calentamiento aporta poco producto, consume energía y expone los terpenos a hidrólisis y oxidación.']] },
+      { id: 'ca', n: 'Calentamiento', ref: 1, ops: [
+        ['Débil', { rec: -1 }, 'Con poco aporte de calor se genera poco vapor: el arrastre es lento e incompleto en el mismo tiempo.'],
+        ['Referencia'],
+        ['Excesivo', { ene: 1, per: -1 }, 'Un calentamiento excesivo puede superar la capacidad del condensador, arrastrar líquido y favorecer la degradación térmica en el fondo del alambique.']] },
+      { id: 'co', n: 'Condensación', ref: 1, ops: [
+        ['Insuficiente', { rec: -1, per: -1 }, 'Parte del vapor sale sin condensar: se pierden sobre todo los compuestos más volátiles y se desperdicia la energía usada para vaporizarlos.'],
+        ['Adecuada (referencia)']] }
+    ],
+    ch: {
+      pts: [6, 4, 2, 1],
+      escenario: 'Durante una corrida con cáscara de naranja, el agua de enfriamiento sale del condensador E-101 casi a la temperatura del vapor y se observa vapor escapando por la descarga.',
+      partes: [{ tipo: 'single', q: '¿Cómo afecta esta condición a la recuperación del aceite esencial?', ops: [
+        { id: 'a', t: 'El aceite queda retenido en la cáscara porque el vapor ya no puede arrastrarlo.', fb: 'El arrastre ocurre en el alambique y depende del calentamiento y del contacto con el vapor, no del condensador. Pista: sigue el recorrido del vapor después de salir del alambique.' },
+        { id: 'b', ok: 1, t: 'Parte del vapor de agua y de los volátiles sale sin condensar: baja el aceite recuperado y se pierden sobre todo los componentes más volátiles.' },
+        { id: 'c', t: 'Aumenta la recuperación, porque un condensado más caliente separa mejor el aceite del hidrolato.', fb: 'Un condensado caliente no mejora la separación: eleva la presión de vapor del aceite y favorece su evaporación en el separador. Pista: ¿qué fracción del vapor llega a convertirse en líquido?' },
+        { id: 'd', t: 'Solo aumenta el consumo de agua de enfriamiento; la cantidad de aceite recuperado no cambia.', fb: 'El problema no es el consumo de agua, sino un cambio de fase incompleto. Pista: piensa en qué ocurre con los compuestos que salen del equipo todavía como vapor.' }
+      ] }],
+      okMsg: 'Si el condensador no retira suficiente calor, la mezcla de vapores no cambia de fase por completo. Lo que no condensa se pierde: disminuye la recuperación, cambia la composición del aceite (se pierden los compuestos más volátiles) y se desperdicia la energía empleada en vaporizar.'
+    }
+  },
+  B: {
+    n: 'Extracción de pectinas mediante hidrólisis ácida', corto: 'Pectinas', mp: 'Cáscaras de cítricos y de otras frutas',
+    etapas: [
+      { n: 'Preparación y acondicionamiento', g: 'molino', tag: 'M-201', inl: 'Cáscaras de frutas', d: 'Lavado, inactivación de enzimas pectolíticas, secado y molienda. Estabiliza la materia prima y facilita el contacto con el medio de extracción.', fin: 'estabilizar y reducir de tamaño la materia prima' },
+      { n: 'Extracción ácida y solubilización', g: 'ph', tag: 'R-201', inl: 'Agua acidificada', d: 'En medio acuoso ácido y caliente se hidrolizan los enlaces que retienen la protopectina en la pared celular y la pectina pasa a la solución. Referencia didáctica: pH 2, 90 °C, 60 min.', fin: 'solubilizar la protopectina en medio acuoso ácido y caliente' },
+      { n: 'Separación sólido-líquido', g: 'filtro', tag: 'F-201', out: 'Sólido agotado', d: 'Filtración o centrifugación: el extracto péctico se separa del sólido agotado fibroso.', fin: 'separar el extracto líquido del sólido agotado' },
+      { n: 'Recuperación y purificación', g: 'tanque', tag: 'T-201', inl: 'Alcohol', out: 'Licor alcohólico a recuperación', d: 'La pectina se precipita con alcohol, se separa y se lava para retirar azúcares, sales y ácido residual. El alcohol puede recuperarse por destilación.', fin: 'precipitar la pectina disuelta y retirar impurezas solubles' },
+      { n: 'Secado y caracterización', g: 'secador', tag: 'X-201', d: 'Secado y molienda del producto. Se determinan el grado de esterificación, el contenido de ácido galacturónico, la viscosidad o el peso molecular y la capacidad gelificante.', fin: 'retirar la humedad del producto y medir sus propiedades' }
+    ],
+    orden: [2, 4, 1, 0, 3], final: 'Pectina',
+    ficha: [
+      ['Naturaleza de la pectina', 'Heteropolisacárido de la pared celular y la lámina media, formado principalmente por unidades de ácido galacturónico con enlaces α-(1→4), parcialmente esterificadas con metanol. En el tejido se encuentra como protopectina insoluble, ligada a otros componentes de la pared.'],
+      ['Condición de referencia (didáctica)', 'pH 2, 90 °C y 60 minutos. Son valores de referencia para analizar tendencias, no óptimos universales: las mejores condiciones dependen de la materia prima, del ácido, del equipo y de las propiedades que se busquen.'],
+      ['Alto y bajo metoxilo', 'Según el grado de esterificación (GE) se distinguen pectinas de alto metoxilo (GE de 50 % o más), que gelifican con alto contenido de sólidos solubles y pH ácido, y de bajo metoxilo (GE menor de 50 %), que gelifican en presencia de iones calcio. El GE final depende de la materia prima, su madurez y toda la historia del proceso: ninguna condición de hidrólisis produce automáticamente una categoría.'],
+      ['Aplicaciones', 'Gelificante en mermeladas y jaleas, estabilizante en bebidas lácteas ácidas, espesante, y base para películas y recubrimientos biodegradables.'],
+      ['Limitaciones', 'Efluentes ácidos, consumo de alcohol (recuperable, con costo energético), energía de calentamiento y secado, y un sólido agotado que requiere destino.']
+    ],
+    inds: [['sol', 'Solubilización de protopectina'], ['int', 'Integridad del polímero (peso molecular)'], ['recu', 'Pectina recuperable por precipitación']],
+    vars: [
+      { id: 'ph', n: 'Acidez del medio', ref: 1, ops: [
+        ['pH mayor que 2 (menos ácido)', { sol: -1, int: 1 }, 'Con menor acidez se hidrolizan menos enlaces de los que retienen la protopectina: se libera menos pectina, aunque las cadenas extraídas se conservan mejor.', -1],
+        ['pH 2 (referencia)'],
+        ['pH menor que 2 (más ácido)', { sol: 1, int: -1 }, 'Más acidez libera más protopectina, pero también acelera la hidrólisis de los enlaces glicosídicos de la cadena y puede favorecer la desesterificación.', 1]] },
+      { id: 'te', n: 'Temperatura', ref: 1, ops: [
+        ['Menor que 90 °C', { sol: -1, int: 1 }, 'A menor temperatura la solubilización es más lenta y queda incompleta en el mismo tiempo.', -1],
+        ['90 °C (referencia)'],
+        ['Mayor que 90 °C', { sol: 1, int: -1 }, 'Más temperatura acelera tanto la liberación como la degradación de la pectina.', 1]] },
+      { id: 'ti', n: 'Tiempo de contacto', ref: 1, ops: [
+        ['Menos de 60 min', { sol: -1, int: 1 }, 'Con menos tiempo queda protopectina sin extraer en el tejido.', -1],
+        ['60 min (referencia)'],
+        ['Más de 60 min', { sol: 1, int: -1 }, 'El tiempo adicional expone la pectina ya disuelta al medio ácido caliente: aumenta la despolimerización.', 1]] }
+    ],
+    ch: {
+      pts: [6, 4, 2, 1],
+      escenario: 'A partir de la referencia didáctica (pH 2, 90 °C, 60 min), el equipo propone un tratamiento más severo: medio más ácido, mayor temperatura y más tiempo de contacto.',
+      partes: [
+        { tipo: 'single', q: 'Efecto esperado sobre el rendimiento de extracción', ops: [
+          { id: 'a', t: 'Aumenta de forma indefinida: a mayor severidad, siempre más pectina.', fb: 'La hidrólisis no distingue entre los enlaces que anclan la protopectina y los de la propia cadena. Pista: ¿qué ocurre con cadenas muy fragmentadas en la etapa de precipitación con alcohol?' },
+          { id: 'b', t: 'Disminuye desde el inicio, porque el ácido destruye la pectina antes de liberarla.', fb: 'Sin cierta severidad la protopectina permanece insoluble en el tejido. Pista: compara con un tratamiento más suave que la referencia en la pestaña Variables.' },
+          { id: 'c', ok: 1, t: 'Tiende a aumentar hasta cierto punto; con severidad excesiva, la pectina recuperable puede disminuir.' }
+        ] },
+        { tipo: 'single', q: 'Efecto esperado sobre la integridad del polímero', ops: [
+          { id: 'a', ok: 1, t: 'Mayor despolimerización: menor peso molecular y viscosidad, posible desesterificación y menor capacidad gelificante.' },
+          { id: 'b', t: 'Se conserva sin cambios, porque el enlace glicosídico es estable en medio ácido caliente.', fb: 'Los enlaces glicosídicos se hidrolizan en medio ácido, y más rápido al subir la temperatura. Pista: es el mismo tipo de reacción que libera la protopectina.' },
+          { id: 'c', t: 'Aumenta el peso molecular por entrecruzamiento de las cadenas.', fb: 'El medio ácido caliente rompe cadenas; no las hace crecer. Pista: piensa en hidrólisis, no en polimerización.' }
+        ] }
+      ],
+      okMsg: 'Más acidez, temperatura y tiempo liberan más protopectina, pero la misma hidrólisis fragmenta las cadenas. Los fragmentos pequeños dejan de precipitar con alcohol y el producto pierde viscosidad y capacidad gelificante. Por eso rendimiento y calidad deben evaluarse juntos, y la referencia no es un óptimo universal.'
+    }
+  },
+  C: {
+    n: 'Producción de biodiésel mediante transesterificación', corto: 'Biodiésel', mp: 'Aceite vegetal usado',
+    etapas: [
+      { n: 'Acondicionamiento del aceite', g: 'filtro', tag: 'F-301', inl: 'Aceite vegetal usado', out: 'Sólidos y agua', d: 'Se retiran sólidos y agua y se evalúa la acidez. La calidad del aceite define si la reacción puede avanzar sin reacciones secundarias.', fin: 'retirar sólidos y agua de la materia prima y conocer su acidez' },
+      { n: 'Reacción de transesterificación', g: 'tanque', tag: 'R-301', inl: 'Metanol y catalizador', d: 'Los triglicéridos reaccionan con metanol en presencia de un catalizador y forman ésteres metílicos de ácidos grasos y glicerol. El exceso de alcohol desplaza el equilibrio hacia los productos.', fin: 'hacer reaccionar los triglicéridos con el alcohol' },
+      { n: 'Separación de fases', g: 'separador', tag: 'S-301', out: 'Glicerol crudo', d: 'El glicerol, más denso, decanta en la fase inferior; la fase superior concentra los ésteres metílicos.', fin: 'separar por densidad la fase rica en glicerol de la fase éster' },
+      { n: 'Purificación del biodiésel', g: 'tanque', tag: 'T-301', out: 'Metanol recuperado y aguas de lavado', d: 'Se retiran metanol residual, catalizador, jabones y glicerol libre, y se seca el producto.', fin: 'retirar alcohol residual, catalizador y jabones de la fase éster' },
+      { n: 'Control de calidad', g: 'control', tag: 'QI-301', d: 'Se verifican viscosidad, densidad, contenido de agua, acidez y contenido de ésteres frente a la especificación.', fin: 'verificar que el producto cumple sus parámetros de calidad' }
+    ],
+    orden: [1, 3, 0, 4, 2], final: 'Biodiésel',
+    ficha: [
+      ['Fundamento químico', 'Un triglicérido reacciona con un alcohol de cadena corta (metanol como referencia) y forma ésteres metílicos de ácidos grasos (biodiésel) y glicerol: triglicérido + 3 CH₃OH ⇌ 3 R–COOCH₃ + glicerol. La reacción es reversible y avanza en tres pasos consecutivos, con diglicéridos y monoglicéridos como intermediarios.'],
+      ['Función del catalizador', 'Acelera la reacción sin formar parte de los productos. En la ruta convencional es alcalino, lo que la hace sensible al agua y a los ácidos grasos libres del aceite.'],
+      ['Parámetros de calidad', 'Viscosidad, densidad, contenido de agua, acidez y contenido de ésteres. Un producto con mono-, di- o triglicéridos sin convertir, agua o jabones no cumple especificación.'],
+      ['Aplicaciones', 'Uso energético: combustible en mezclas con diésel para motores y calderas. El glicerol es un coproducto con potencial de valorización tras purificarse.'],
+      ['Limitaciones técnicas y ambientales', 'Calidad variable del aceite usado, metanol de origen mayoritariamente fósil, aguas de lavado y glicerol crudo impuro por gestionar, estabilidad a la oxidación y comportamiento en frío del producto.'],
+      ['Seguridad', 'Esta estación es una simulación conceptual. El metanol es tóxico e inflamable y los catalizadores son corrosivos; el recurso no describe procedimientos de laboratorio.']
+    ],
+    inds: [['conv', 'Conversión a ésteres metílicos'], ['jab', 'Formación de jabones'], ['sep', 'Facilidad de separación del glicerol']],
+    vars: [
+      { id: 'hu', n: 'Humedad del aceite', ref: 0, ops: [
+        ['Baja (referencia)'],
+        ['Elevada', { conv: -1, jab: 1, sep: -1 }, 'El agua hidroliza triglicéridos y ésteres: genera ácidos grasos libres que, con un catalizador alcalino, terminan como jabón.']] },
+      { id: 'ac', n: 'Acidez (ácidos grasos libres)', ref: 0, ops: [
+        ['Baja (referencia)'],
+        ['Elevada', { conv: -1, jab: 1, sep: -1 }, 'Los ácidos grasos libres neutralizan el catalizador alcalino y forman jabones y agua: queda menos catalizador disponible y aparecen emulsiones.']] },
+      { id: 'rm', n: 'Relación molar metanol / aceite', ref: 1, ops: [
+        ['Estequiométrica (3:1)', { conv: -1 }, 'La reacción es reversible: sin exceso de alcohol, el equilibrio limita la conversión.'],
+        ['Exceso moderado (referencia)'],
+        ['Exceso muy alto', { sep: -1 }, 'Un gran exceso de metanol aumenta la solubilidad mutua entre glicerol y ésteres, dificulta la decantación y encarece la recuperación del alcohol.']] },
+      { id: 'te', n: 'Temperatura de reacción', ref: 1, ops: [
+        ['Baja', { conv: -1 }, 'A baja temperatura el aceite es más viscoso y la reacción más lenta: en el mismo tiempo se convierte menos.'],
+        ['Moderada, bajo la ebullición del metanol (referencia)'],
+        ['Cercana a la ebullición del metanol', {}, 'Cerca de su punto de ebullición el metanol tiende a evaporarse: si el sistema no lo retiene, se pierde reactivo y aumenta el riesgo, sin una mejora proporcional de la conversión.']] }
+    ],
+    ch: {
+      pts: [6, 4, 2, 1],
+      escenario: 'Llega un lote de aceite vegetal usado con humedad y acidez (ácidos grasos libres) elevadas. Se plantea transesterificarlo con catalizador alcalino sin acondicionamiento previo.',
+      partes: [{ tipo: 'multi', q: 'Selecciona todas las consecuencias técnicamente esperables.', falta: 'sigue la cadena completa: qué reacciona con el catalizador, qué hace el agua y qué efecto tienen los jabones en la separación.', ops: [
+        { id: 'a', ok: 1, t: 'Los ácidos grasos libres reaccionan con el catalizador alcalino, forman jabones y consumen catalizador.' },
+        { id: 'b', t: 'El agua actúa como cosolvente y acelera la conversión a ésteres metílicos.', fb: 'El agua no es un reactivo útil aquí: compite mediante hidrólisis y resta catalizador disponible.' },
+        { id: 'c', ok: 1, t: 'El agua favorece la hidrólisis de triglicéridos y ésteres, lo que genera más ácidos grasos libres y más jabón.' },
+        { id: 'd', t: 'La acidez elevada mejora el contenido de ésteres, porque los ácidos grasos libres ya son biodiésel.', fb: 'Un ácido graso libre no es un éster metílico. Con catalizador alcalino se neutraliza a jabón; convertirlo en éster requiere otra reacción (esterificación).' },
+        { id: 'e', ok: 1, t: 'Los jabones estabilizan emulsiones que dificultan separar el glicerol y purificar el biodiésel.' }
+      ] }],
+      okMsg: 'Humedad y acidez actúan en cadena: el agua hidroliza, los ácidos grasos libres consumen catalizador y forman jabón, y el jabón emulsiona las fases. El resultado es menor conversión y un producto más difícil de purificar. Por eso el aceite usado suele requerir acondicionamiento y por eso agua y acidez son parámetros de calidad.'
+    }
+  },
+  D: {
+    n: 'Extracción de celulosa', corto: 'Celulosa', mp: 'Rastrojo de piña, residuos de banano, bagazo de caña',
+    etapas: [
+      { n: 'Preparación de la biomasa', g: 'molino', tag: 'M-401', inl: 'Rastrojo de piña', d: 'Secado, limpieza y reducción de tamaño para homogeneizar el material y facilitar el acceso de los reactivos.', fin: 'limpiar, secar y reducir de tamaño la biomasa' },
+      { n: 'Pretratamiento', g: 'tanque', tag: 'R-401', inl: 'Agua o reactivo suave', out: 'Extractivos y parte de la hemicelulosa', d: 'Abre la estructura de la pared celular, retira extractivos y solubiliza parte de la hemicelulosa.', fin: 'abrir la estructura lignocelulósica y retirar extractivos' },
+      { n: 'Separación de componentes no celulósicos', g: 'digestor', tag: 'R-402', inl: 'Reactivo', out: 'Licor con lignina disuelta', d: 'La lignina y la hemicelulosa residual se solubilizan y la fracción sólida se enriquece en celulosa. Puede incluir una etapa de blanqueo.', fin: 'solubilizar la lignina y la hemicelulosa residual' },
+      { n: 'Purificación y lavado', g: 'filtro', tag: 'F-401', inl: 'Agua', out: 'Efluente', d: 'Se retiran la lignina disuelta y los reactivos residuales de la fibra. Esta etapa concentra el consumo de agua y genera el efluente del proceso.', fin: 'retirar de la fibra el licor y los reactivos residuales' },
+      { n: 'Recuperación de fibras celulósicas', g: 'secador', tag: 'X-401', d: 'Tamizado, prensado y secado de las fibras para su uso posterior.', fin: 'recuperar y secar la fibra purificada' }
+    ],
+    orden: [4, 2, 0, 3, 1], final: 'Fibras celulósicas',
+    ficha: [
+      ['Composición de la biomasa lignocelulósica', 'Celulosa: polímero lineal de glucosa con enlaces β-(1→4), organizado en microfibrillas parcialmente cristalinas. Hemicelulosa: heteropolisacárido ramificado y amorfo de pentosas y hexosas, de menor grado de polimerización y más fácil de hidrolizar. Lignina: polímero aromático tridimensional que cementa las fibras y dificulta el acceso a los polisacáridos. Además hay extractivos y minerales.'],
+      ['Celulosa y nanocelulosa no son lo mismo', 'La extracción entrega fibras celulósicas de escala micrométrica. La nanocelulosa (nanofibrillas o nanocristales) requiere etapas posteriores y controladas sobre celulosa ya purificada, como desfibrilación mecánica intensa o hidrólisis ácida controlada. Son procesos y productos distintos.'],
+      ['Aplicaciones', 'Papel y cartón, empaques moldeados, refuerzo en materiales compuestos y biomateriales.'],
+      ['Agua, reactivos y efluentes', 'Los lavados consumen mucha agua; los licores contienen lignina y hemicelulosa disueltas, reactivos y alta carga orgánica, por lo que requieren recuperación o tratamiento. El secado añade consumo energético.']
+    ],
+    inds: [['pur', 'Pureza de la fracción celulósica'], ['fib', 'Integridad de la fibra (grado de polimerización)'], ['efl', 'Consumo de agua y reactivos; carga del efluente']],
+    vars: [
+      { id: 'li', n: 'Contenido de lignina de la biomasa', ref: 1, ops: [
+        ['Bajo', { pur: 1 }, 'Con menos lignina inicial se alcanza mayor pureza con el mismo tratamiento.'],
+        ['Medio (referencia)'],
+        ['Alto', { pur: -1, efl: 1 }, 'Más lignina inicial exige más reactivo o severidad para la misma pureza y carga más el licor residual.']] },
+      { id: 'se', n: 'Severidad del tratamiento', ref: 1, ops: [
+        ['Suave', { pur: -1, fib: 1, efl: -1 }, 'Un tratamiento suave conserva la fibra, pero deja lignina y hemicelulosa residuales.'],
+        ['Referencia'],
+        ['Severa', { pur: 1, fib: -1, efl: 1 }, 'La severidad elevada retira más lignina, pero también rompe cadenas de celulosa: fibras más cortas y débiles, menor rendimiento y más carga en el efluente.']] },
+      { id: 'la', n: 'Lavado', ref: 1, ops: [
+        ['Insuficiente', { pur: -1 }, 'Sin lavado suficiente, la lignina disuelta y los reactivos residuales quedan sobre la fibra.'],
+        ['Adecuado (referencia)'],
+        ['Intensivo', { efl: 1 }, 'Una vez retirado el licor, más lavados mejoran poco la pureza y aumentan el consumo de agua y el volumen de efluente.']] }
+    ],
+    ch: {
+      pts: [6, 4, 2, 1],
+      escenario: 'Se recibe rastrojo de piña seco y molido: fibras ricas en celulosa embebidas en hemicelulosa y lignina, con extractivos y minerales.',
+      partes: [
+        { tipo: 'multi', q: '¿Qué fracciones debe retirar el tratamiento para enriquecer la fracción celulósica?', falta: 'revisa todo lo que acompaña a la celulosa en la pared celular, incluidos los componentes minoritarios.', ops: [
+          { id: 'a', ok: 1, t: 'Lignina' },
+          { id: 'b', t: 'Celulosa amorfa y cristalina', fb: 'La celulosa es la fracción que se busca conservar; retirarla reduce el rendimiento.' },
+          { id: 'c', ok: 1, t: 'Hemicelulosa' },
+          { id: 'd', ok: 1, t: 'Extractivos y minerales (ceras, pigmentos, cenizas)' },
+          { id: 'e', t: 'Solo las regiones cristalinas de la celulosa', fb: 'Las regiones cristalinas aportan resistencia a la fibra. Aislar cristales corresponde a la producción de nanocelulosa, un proceso distinto.' }
+        ] },
+        { tipo: 'single', q: '¿Cuál es la consecuencia más probable de un tratamiento demasiado severo?', ops: [
+          { id: 'a', t: 'Se obtiene nanocelulosa directamente, sin etapas adicionales.', fb: 'La nanocelulosa requiere etapas específicas y controladas sobre celulosa ya purificada; el exceso de severidad solo degrada de forma no controlada. Pista: piensa en el grado de polimerización.' },
+          { id: 'b', t: 'La lignina se transforma en celulosa y aumenta el rendimiento.', fb: 'La lignina es un polímero aromático y la celulosa un polisacárido: no se interconvierten. Pista: ¿qué enlaces de la celulosa pueden romperse?' },
+          { id: 'c', ok: 1, t: 'Parte de la celulosa se despolimeriza: bajan el rendimiento y la resistencia de la fibra, y aumentan el consumo de reactivos y la carga del efluente.' },
+          { id: 'd', t: 'Solo se pierde hemicelulosa; la cristalinidad protege por completo a la celulosa.', fb: 'La cristalinidad dificulta el ataque, pero no lo impide: en condiciones severas se rompen enlaces glicosídicos. Pista: revisa el indicador de integridad de la fibra en la pestaña Variables.' }
+        ] }
+      ],
+      okMsg: 'Enriquecer la celulosa implica retirar lignina, hemicelulosa, extractivos y minerales sin dañar la fibra. Si la severidad se excede, la celulosa también se degrada: menor grado de polimerización, fibras más débiles, menor rendimiento y un efluente más cargado.'
+    }
+  }
+};
+
+/* ===================== Nivel 3 ===================== */
+const ESCENARIO = 'Una agroindustria de Costa Rica genera cáscaras de cítricos, aceite vegetal usado y residuos lignocelulósicos. La empresa desea disminuir la disposición final y obtener productos con valor comercial, pero dispone de recursos limitados.';
+const CRIT = ['Compatibilidad con la materia prima', 'Complejidad tecnológica', 'Necesidad de acondicionamiento', 'Potencial de valorización', 'Consumo de recursos', 'Generación de residuos secundarios', 'Posibles aplicaciones comerciales'];
+const RATE = ['Baja', 'Media', 'Alta'];
+const FBX = {
+  glic: 'El glicerol es coproducto de la transesterificación de triglicéridos.',
+  hidro: 'El hidrolato se genera al condensar vapor en la hidrodestilación.',
+  licor: 'Ese licor proviene de la deslignificación de biomasa lignocelulósica.',
+  jab: 'Los jabones aparecen cuando ácidos grasos libres reaccionan con un catalizador alcalino.'
+};
+const R3 = {
+  cit: {
+    n: 'Cáscaras de cítricos', ico: 'r_cit', d: 'Flujo estacional y húmedo; se deteriora con rapidez si no se procesa o estabiliza.',
+    via: { A: [1], B: [1], C: [0, 'El aceite esencial está formado por terpenos, no por triglicéridos: no hay sustrato para transesterificar.'], D: [0, 'Aunque la cáscara contiene algo de fibra, su fracción lignocelulósica es menor; la celulosa no es su componente característico.'] },
+    viaOk: 'El flavedo aporta aceite esencial (hidrodestilación) y el albedo protopectina (extracción ácida). En los pasos siguientes compararás estas dos tecnologías.',
+    alt: { a: { n: 'Hidrodestilación → aceite esencial', c: 'Hidrodestilación' }, b: { n: 'Extracción ácida → pectina', c: 'Extracción ácida' } },
+    extra: { id: 'c', n: 'Cascada: hidrodestilación y, después, pectina del sólido agotado' },
+    guia: [
+      'Ambas son altas: el flavedo aporta aceite esencial y el albedo, protopectina. La hidrodestilación exige cáscara fresca o bien conservada, porque los volátiles se pierden con el almacenamiento; la pectina tolera cáscara seca y estabilizada.',
+      'Hidrodestilación: pocas operaciones (alambique, condensador, separador). Pectinas: más etapas y más control (pH, temperatura, filtración, precipitación con alcohol, secado).',
+      'Hidrodestilación: basta con reducir el tamaño. Pectinas: lavado, inactivación enzimática, secado y molienda para estabilizar la materia prima.',
+      'El aceite es una fracción pequeña de la masa de la cáscara, aunque de alto valor unitario; la pectina representa una fracción másica mayor y un mercado de ingredientes amplio. El balance depende de la escala, la calidad y el mercado.',
+      'Hidrodestilación: energía para evaporar agua y agua de enfriamiento. Pectinas: ácido, alcohol (recuperable), y energía para calentar, destilar el alcohol y secar.',
+      'Hidrodestilación: hidrolato y cáscara agotada húmeda, que aún puede valorizarse. Pectinas: efluente ácido, licor alcohólico y sólido agotado fibroso.',
+      'Aceite esencial: saborizantes, cosmética, aromas y limpieza. Pectina: gelificante y estabilizante en alimentos, películas biodegradables.'
+    ],
+    out: {
+      a: { pp: [['Aceite esencial rico en limoneno', 1], ['Pectina', 0, 'La pectina no es volátil: el vapor no la arrastra.'], ['Glicerol', 0, FBX.glic]],
+        sec: [['Hidrolato (agua condensada con trazas aromáticas)', 1], ['Glicerol crudo', 0, FBX.glic], ['Cáscara agotada húmeda, aún con pectina y fibra', 1], ['Licor con lignina disuelta', 0, FBX.licor]],
+        falta: 'sigue las corrientes que salen del alambique y del separador, además del aceite.' },
+      b: { pp: [['Aceite esencial', 0, 'En la extracción ácida no hay arrastre ni condensación de volátiles.'], ['Pectina', 1], ['Fibras celulósicas', 0, 'La fibra queda en el sólido agotado; no es el producto buscado en esta ruta.']],
+        sec: [['Hidrolato', 0, FBX.hidro], ['Sólido agotado fibroso', 1], ['Jabones', 0, FBX.jab], ['Efluente ácido y licor alcohólico por recuperar', 1]],
+        falta: 'revisa qué sale de la separación sólido-líquido y de la precipitación con alcohol.' }
+    },
+    sup: {
+      a: 'Es defendible si la cáscara llega fresca, la inversión disponible es baja y existe mercado local para aceites esenciales. Exige resolver el destino de la cáscara agotada.',
+      b: 'Es defendible si hay capacidad para controlar el proceso y manejar ácido y alcohol, y existe un comprador de pectina. Supone renunciar al aceite esencial.',
+      c: 'Es defendible si la empresa puede sostener dos líneas: aprovecha dos fracciones y reduce más la disposición final, a costa de mayor complejidad y de verificar la calidad de la pectina tras el calentamiento previo.'
+    }
+  },
+  ace: {
+    n: 'Aceite vegetal usado', ico: 'r_ace', d: 'Calidad variable entre lotes: la humedad, los sólidos y la acidez dependen del uso previo.',
+    via: { A: [0, 'El aceite usado no tiene una fracción volátil aromática que arrastrar con vapor.'], B: [0, 'No contiene polisacáridos de pared celular: no hay protopectina que solubilizar.'], C: [1], D: [0, 'No contiene fibra ni componentes lignocelulósicos.'] },
+    viaOk: 'Solo la transesterificación aprovecha los triglicéridos. Como hay una única tecnología compatible, compararás dos configuraciones de proceso: con y sin acondicionamiento previo del aceite.',
+    alt: { a: { n: 'Transesterificación directa (aceite tal como se recibe)', c: 'Transesterificación directa' }, b: { n: 'Acondicionamiento del aceite + transesterificación', c: 'Con acondicionamiento' } },
+    guia: [
+      'Depende de la calidad del lote: con humedad y acidez bajas, la ruta directa es viable; con valores altos, el acondicionamiento se vuelve necesario.',
+      'Directa: menos equipos y operaciones. Con acondicionamiento: se añaden filtrado, secado y reducción de acidez, con más control analítico.',
+      'Es la diferencia central: la segunda alternativa invierte en preparar el aceite; la primera traslada el riesgo a la reacción y a la purificación.',
+      'Un biodiésel que no cumple contenido de ésteres, agua o acidez pierde valor. El acondicionamiento protege la conversión y la calidad cuando el aceite es variable.',
+      'Directa: menor consumo inicial, pero posible gasto extra de catalizador y de agua de lavado si se forman jabones. Con acondicionamiento: más energía y, según el caso, reactivos adicionales.',
+      'Ambas generan glicerol crudo y corrientes con metanol. La directa, con aceite ácido y húmedo, genera más jabones y emulsiones; el acondicionamiento genera sólidos y agua retirados del aceite.',
+      'El producto es el mismo: biodiésel para mezclas o autoconsumo energético, y glicerol como coproducto. Cambia la probabilidad de cumplir la especificación.'
+    ],
+    out: {
+      a: { pp: [['Glicerol', 0, 'El glicerol es el coproducto de la reacción, no su producto principal.'], ['Biodiésel (ésteres metílicos de ácidos grasos)', 1], ['Jabón', 0, 'El jabón es el resultado indeseado de reacciones secundarias.']],
+        sec: [['Glicerol crudo', 1], ['Hidrolato', 0, FBX.hidro], ['Jabones y emulsiones, si el aceite llega húmedo y ácido', 1], ['Aguas de lavado con metanol y catalizador residual', 1]],
+        falta: 'piensa en el coproducto de la reacción, en las reacciones secundarias y en la purificación.' },
+      b: { pp: [['Biodiésel (ésteres metílicos de ácidos grasos)', 1], ['Glicerol', 0, 'El glicerol es el coproducto de la reacción, no su producto principal.'], ['Aceite refinado comestible', 0, 'El aceite acondicionado es un intermedio del proceso y no vuelve a la cadena alimentaria.']],
+        sec: [['Licor con lignina disuelta', 0, FBX.licor], ['Glicerol crudo', 1], ['Sólidos y agua retirados durante el acondicionamiento', 1], ['Cáscara agotada', 0, 'La cáscara agotada pertenece a las rutas de cítricos.']],
+        falta: 'considera lo que se retira del aceite antes de reaccionar y el coproducto de la reacción.' }
+    },
+    sup: {
+      a: 'Es defendible si los análisis muestran humedad y acidez bajas de forma consistente. Con lotes variables aumenta el riesgo de jabones y de producto fuera de especificación.',
+      b: 'Es defendible cuando el aceite es variable o llega húmedo y ácido: mayor inversión a cambio de conversión y calidad más estables.'
+    }
+  },
+  lig: {
+    n: 'Residuos lignocelulósicos', ico: 'r_lig', d: 'Rastrojo de piña, residuos de banano o bagazo de caña: voluminosos, fibrosos y abundantes.',
+    via: { A: [0, 'Estos residuos no tienen una fracción de aceite esencial aprovechable.'], B: [0, 'Su contenido de pectina es bajo frente a la fracción lignocelulósica dominante.'], C: [0, 'No contienen triglicéridos.'], D: [1] },
+    viaOk: 'Solo la extracción de celulosa aprovecha la fracción fibrosa dominante. Compararás dos intensidades de tratamiento, que conducen a productos de distinta pureza.',
+    alt: { a: { n: 'Tratamiento moderado → fibra para empaques y compuestos', c: 'Tratamiento moderado' }, b: { n: 'Deslignificación intensa con blanqueo → celulosa de alta pureza', c: 'Tratamiento intenso' } },
+    guia: [
+      'Ambas parten de biomasa lignocelulósica. Cuanto mayor es el contenido de lignina, más exigente resulta alcanzar alta pureza.',
+      'Moderado: menos etapas. Intenso con blanqueo: más etapas, más control y manejo de reactivos y efluentes.',
+      'Similar en ambas: secado, limpieza y reducción de tamaño. El rastrojo fresco es húmedo y voluminoso, lo que condiciona su logística.',
+      'Fibra con lignina residual: empaques moldeados y refuerzo en compuestos. Celulosa de alta pureza: mayor valor unitario, con menor rendimiento másico y mayor costo de proceso.',
+      'El tratamiento intenso consume más reactivos, agua de lavado y energía.',
+      'Ambas generan licores con hemicelulosa y lignina disueltas; la intensa añade efluentes de blanqueo y más carga orgánica por tratar.',
+      'Moderado: empaques, cartón y materiales compuestos. Intenso: papel de mayor calidad, biomateriales y base para una eventual producción de nanocelulosa, que es un proceso distinto.'
+    ],
+    out: {
+      a: { pp: [['Nanocelulosa', 0, 'La nanocelulosa requiere etapas adicionales y específicas sobre celulosa purificada.'], ['Pectina', 0, 'La pectina se obtiene de cáscaras de frutas, no de esta ruta.'], ['Fibras celulósicas con lignina residual', 1]],
+        sec: [['Licor con hemicelulosa y lignina disueltas', 1], ['Glicerol crudo', 0, FBX.glic], ['Aguas de lavado', 1], ['Hidrolato', 0, FBX.hidro]],
+        falta: 'sigue las corrientes líquidas que salen del tratamiento y de los lavados.' },
+      b: { pp: [['Celulosa de alta pureza', 1], ['Nanocristales de celulosa', 0, 'Los nanocristales requieren una hidrólisis controlada posterior: es otro proceso.'], ['Lignina', 0, 'La lignina es la fracción que se retira; sale disuelta en el licor.']],
+        sec: [['Jabones', 0, FBX.jab], ['Licor con mayor carga de lignina y reactivos', 1], ['Efluentes de blanqueo y de lavado', 1], ['Aceite esencial', 0, 'Este residuo no tiene una fracción volátil aprovechable.']],
+        falta: 'sigue las corrientes líquidas que salen de la deslignificación, el blanqueo y los lavados.' }
+    },
+    sup: {
+      a: 'Es defendible con recursos limitados y un mercado de empaques o compuestos: menos reactivos y efluentes, a cambio de menor pureza.',
+      b: 'Es defendible si existe un comprador que pague la pureza y capacidad para tratar los efluentes. Exige más reactivos, agua y control.'
+    }
+  }
+};
+const RUB = [
+  ['Comparación con criterios', 'La matriz está completa y las valoraciones de las dos alternativas son coherentes con los fundamentos de cada proceso.'],
+  ['Evidencia técnica', 'La justificación se apoya en composición del residuo, variables críticas o parámetros de calidad, no en preferencias.'],
+  ['Supuestos y limitaciones', 'Declara los supuestos de la decisión y reconoce limitaciones ambientales y de recursos.'],
+  ['Coherencia de la decisión', 'La alternativa elegida es consistente con la matriz, el producto principal y el manejo de los residuos secundarios.']
+];
+const RUB_LV = [[0, 'No evidenciado'], [2, 'Inicial'], [4, 'En desarrollo'], [6, 'Logrado']];
+
+/* ===================== Cierre ===================== */
+const REFLEX = [
+  '¿Por qué una misma materia prima puede tener diferentes alternativas de valorización?',
+  '¿Qué variables técnicas influyen más en la selección de un proceso?',
+  '¿Por qué el mayor rendimiento de producto no siempre representa la alternativa ambientalmente más favorable?'
+];
+const COMP = [
+  { k: ['n1_A', 'n1_B', 'n1_C', 'n1_D'], max: 16, t: 'Relación entre la composición del residuo, la tecnología y el producto (Nivel 1).' },
+  { k: ['n1_casc'], max: 4, t: 'Valorización en cascada de las cáscaras de cítricos: flavedo y albedo como fracciones distintas (Nivel 1).' },
+  { k: ['n2_A_et', 'n2_A_ch'], max: 10, t: 'Hidrodestilación: secuencia de etapas y efecto de una condensación insuficiente (Estación 1).' },
+  { k: ['n2_B_et', 'n2_B_ch'], max: 10, t: 'Pectinas: efecto de la severidad sobre el rendimiento y la integridad del polímero (Estación 2).' },
+  { k: ['n2_C_et', 'n2_C_ch'], max: 10, t: 'Biodiésel: efecto de la humedad y la acidez del aceite sobre la conversión y la separación (Estación 3).' },
+  { k: ['n2_D_et', 'n2_D_ch'], max: 10, t: 'Celulosa: fracciones por separar y consecuencias de un tratamiento demasiado severo (Estación 4).' },
+  { k: ['n3_via'], max: 6, t: 'Compatibilidad entre residuo y tecnología en el escenario de la biorrefinería (Nivel 3).' },
+  { k: ['n3_out'], max: 10, t: 'Identificación del producto principal, los coproductos y los residuos secundarios (Nivel 3).' }
+];
+const NOTA_IA = 'Recurso educativo desarrollado con apoyo de inteligencia artificial generativa y revisado por la docente. Los contenidos y resultados de las simulaciones deben interpretarse con criterio técnico y contrastarse con fuentes científicas.';
+
+/* ===================== Estado ===================== */
+const KEY = 'bc-estado-v1';
+const PT4 = [4, 3, 2, 1], PT6 = [6, 4, 2, 1], PT10 = [10, 7, 4, 2];
+const freshN1 = () => ({ lines: [0, 1, 2, 3].map(() => ({ r: null, t: null, p: null, ok: false, tries: 0, fb: null, bad: [], errs: [] })), sel: null, msg: null });
+const freshEst = (k) => {
+  const v = {}; EST[k].vars.forEach(x => { v[x.id] = x.ref; });
+  return { placed: 0, errE: 0, errsE: [], fbE: null, ver: null, vars: v, tab: 'etapas' };
+};
+const freshN3 = () => ({ step: 0, res: null, mat: {}, dec: null, sup: '', just: '', msg: null });
+const S0 = () => ({
+  view: 'inicio', started: false, elapsed: 0, pts: {}, log: {}, hecho: {}, reps: {}, ch: {},
+  n1: freshN1(), n2: { est: 'A', A: freshEst('A'), B: freshEst('B'), C: freshEst('C'), D: freshEst('D') },
+  n3: freshN3(), rub: {}, cambios: 0, cierre: { r0: '', r1: '', r2: '', concl: '', msg: null }, confirm: false
+});
+let S = S0();
+let DL = null;
+function save() { try { sessionStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin almacenamiento: el estado vive en memoria */ } }
+function load() { try { const t = sessionStorage.getItem(KEY); if (t) { const o = JSON.parse(t); if (o && o.view && o.n1 && o.n2 && o.n3) return o; } } catch (e) { } return null; }
+
+/* ===================== Utilidades ===================== */
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const words = (s) => ((s || '').trim().match(/\S+/g) || []).length;
+const ico = (k, cls) => `<span class="ico ${cls || ''}">${GLY[k] || ''}</span>`;
+const sum = (keys) => keys.reduce((a, k) => a + (S.pts[k] || 0), 0);
+const N1K = ['n1_A', 'n1_B', 'n1_C', 'n1_D', 'n1_casc'];
+const N2K = ['A', 'B', 'C', 'D'].flatMap(k => ['n2_' + k + '_et', 'n2_' + k + '_ch']);
+const N3K = ['n3_via', 'n3_out'];
+const N3H = ['n3_res', 'n3_via', 'n3_mat', 'n3_out', 'n3_dec'];
+const rubSum = () => RUB.reduce((a, _, i) => a + (S.rub[i] == null ? 0 : S.rub[i]), 0);
+const rubDone = () => RUB.every((_, i) => S.rub[i] != null);
+const total = () => sum(N1K) + sum(N2K) + sum(N3K) + rubSum();
+const doneCount = (ks) => ks.filter(k => S.hecho[k]).length;
+const progress = () => Math.round(100 * (doneCount(N1K) + doneCount(N2K) + doneCount(N3H) + (S.hecho.rep ? 1 : 0)) / 19);
+const fmtT = (s) => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+function award(key, pts, log) { S.hecho[key] = 1; if (!(key in S.pts)) { S.pts[key] = pts; S.log[key] = log; } }
+function fbHTML(fb) {
+  if (!fb) return '';
+  const title = fb.k === 'ok' ? '✓ Correcto' : fb.k === 'bad' ? '✗ Revisa tu respuesta' : 'ℹ Aviso';
+  const items = fb.items || [{ t: fb.t }];
+  return `<div class="fb ${fb.k}" role="status" aria-live="polite"><strong>${title}</strong>${items.map(i => `<p>${esc(i.t)}</p>`).join('')}</div>`;
+}
+
+/* ===================== Motor de desafíos ===================== */
+function viaDef() {
+  const R = R3[S.n3.res];
+  return { pts: PT6, ctx: R.n, partes: [{ tipo: 'multi', q: '¿Cuáles de las cuatro tecnologías aprovechan una fracción abundante y característica de este residuo? Selecciona todas las que correspondan.', falta: 'compara la composición del residuo con lo que cada tecnología necesita como materia prima.', ops: ['A', 'B', 'C', 'D'].map(k => ({ id: k, ok: R.via[k][0], t: TEC[k].n, fb: R.via[k][1] })) }], okMsg: R.viaOk };
+}
+function outDef() {
+  const R = R3[S.n3.res], partes = [];
+  ['a', 'b'].forEach(k => {
+    const o = R.out[k];
+    partes.push({ tipo: 'single', lab: R.alt[k].c + ', producto principal', q: R.alt[k].c + ': producto principal', ops: o.pp.map((x, i) => ({ id: k + 'p' + i, ok: x[1], t: x[0], fb: x[2] })) });
+    partes.push({ tipo: 'multi', lab: R.alt[k].c + ', corrientes secundarias', q: R.alt[k].c + ': coproductos y residuos secundarios (selecciona todos)', falta: o.falta, ops: o.sec.map((x, i) => ({ id: k + 's' + i, ok: x[1], t: x[0], fb: x[2] })) });
+  });
+  return { pts: PT10, ctx: R.n, partes, okMsg: 'Toda alternativa genera corrientes secundarias además del producto principal. Su manejo consume recursos y forma parte de la decisión tecnológica.' };
+}
+function chDef(id) {
+  if (id === 'n1_casc') return CASC;
+  if (id === 'n3_via') return viaDef();
+  if (id === 'n3_out') return outDef();
+  return EST[id[3]].ch;
+}
+function chSt(id) { return S.ch[id] || (S.ch[id] = { sel: {}, wrong: {}, done: {}, tries: 0, ok: false, fb: null, errs: [] }); }
+function chPick(id, pi, oid) {
+  const d = chDef(id), st = chSt(id), p = d.partes[pi];
+  if (st.ok || st.done[pi]) return;
+  if (p.tipo === 'single') st.sel[pi] = st.sel[pi] === oid ? null : oid;
+  else { const a = st.sel[pi] || (st.sel[pi] = []); const ix = a.indexOf(oid); if (ix >= 0) a.splice(ix, 1); else a.push(oid); }
+}
+function chCheck(id) {
+  const d = chDef(id), st = chSt(id); if (st.ok) return;
+  const multi = d.partes.length > 1;
+  const pend = d.partes.findIndex((p, i) => !st.done[i] && (p.tipo === 'single' ? !st.sel[i] : !(st.sel[i] || []).length));
+  if (pend >= 0) { st.fb = { k: 'info', items: [{ t: multi ? `Falta responder: ${d.partes[pend].lab || 'parte ' + (pend + 1)}.` : 'Selecciona una respuesta antes de verificar.' }] }; return; }
+  st.tries++;
+  const items = []; let all = true;
+  d.partes.forEach((p, i) => {
+    if (st.done[i]) return;
+    const pre = multi ? (p.lab || 'Parte ' + (i + 1)) + ': ' : '';
+    if (p.tipo === 'single') {
+      const o = p.ops.find(x => x.id === st.sel[i]);
+      if (o.ok) { st.done[i] = 1; if (multi) items.push({ t: pre + 'correcta.' }); }
+      else { all = false; (st.wrong[i] || (st.wrong[i] = [])).push(o.id); st.errs.push(pre + o.t); items.push({ t: pre + o.fb }); st.sel[i] = null; }
+    } else {
+      const sel = st.sel[i];
+      const bad = p.ops.filter(o => !o.ok && sel.includes(o.id)), miss = p.ops.filter(o => o.ok && !sel.includes(o.id));
+      if (!bad.length && !miss.length) { st.done[i] = 1; if (multi) items.push({ t: pre + 'correcta.' }); }
+      else {
+        all = false;
+        st.errs.push(pre + 'selección «' + p.ops.filter(o => sel.includes(o.id)).map(o => o.t).join(' | ') + '»');
+        bad.forEach(o => items.push({ t: `${pre}«${o.t}» no corresponde. ${o.fb}` }));
+        if (miss.length) items.push({ t: `${pre}${miss.length === 1 ? 'falta 1 opción correcta' : 'faltan ' + miss.length + ' opciones correctas'} por seleccionar.` + (p.falta && (st.tries >= 2 || !bad.length) ? ' Pista: ' + p.falta : '') });
+      }
+    }
+  });
+  if (all) {
+    st.ok = true; st.fb = { k: 'ok', items: [{ t: d.okMsg }] };
+    award(id, d.pts[Math.min(st.tries - 1, 3)], { tries: st.tries, errs: st.errs.slice(), ctx: d.ctx || '', resp: d.partes.map(p => (p.lab ? p.lab + ': ' : '') + p.ops.filter(o => o.ok).map(o => o.t).join(' | ')) });
+  } else st.fb = { k: 'bad', items };
+}
+function chHTML(id) {
+  const d = chDef(id), st = chSt(id), multi = d.partes.length > 1;
+  const pract = (id in S.pts) && !st.ok;
+  const parts = d.partes.map((p, i) => {
+    const locked = st.ok || st.done[i];
+    const ops = p.ops.map(o => {
+      const on = p.tipo === 'single' ? st.sel[i] === o.id : (st.sel[i] || []).includes(o.id);
+      const x = (st.wrong[i] || []).includes(o.id);
+      const good = locked && o.ok;
+      const mk = good ? '✓' : x ? '✗' : p.tipo === 'single' ? (on ? '◉' : '○') : (on ? '☑' : '☐');
+      return `<button type="button" id="op-${id}-${i}-${o.id}" class="op${good ? ' is-ok' : ''}${x ? ' is-x' : ''}" data-a="ch-pick" data-ch="${id}" data-p="${i}" data-o="${o.id}" aria-pressed="${on || good ? 'true' : 'false'}" ${locked || x ? 'disabled' : ''}><span class="mk" aria-hidden="true">${mk}</span><span>${esc(o.t)}${good ? ' <b>(correcta)</b>' : ''}${x ? ' (descartada)' : ''}</span></button>`;
+    }).join('');
+    return `<fieldset class="parte"><legend>${!p.lab && multi ? 'Parte ' + (i + 1) + '. ' : ''}${esc(p.q)}${p.tipo === 'multi' ? ' <span class="tag">selección múltiple</span>' : ''}</legend>${ops}</fieldset>`;
+  }).join('');
+  const val = d.pts;
+  return `<div class="stack">
+    ${d.escenario ? `<div class="scen"><span class="eyebrow">Caso</span><p>${esc(d.escenario)}</p></div>` : ''}
+    ${parts}
+    ${fbHTML(st.fb)}
+    <div class="row">
+      ${st.ok ? `<span class="tag ok">✓ Resuelto · ${S.pts[id]} de ${val[0]} pts registrados</span>` : `<button type="button" class="btn" id="chk-${id}" data-a="ch-check" data-ch="${id}">Verificar respuesta</button>`}
+      <span class="small muted">${pract ? `Modo práctica: esta repetición no cambia los ${S.pts[id]} pts ya registrados.` : st.ok ? '' : `Valor: ${val[0]} pts al primer intento; ${val[1]}, ${val[2]} y ${val[3]} en los siguientes.`}</span>
+    </div>
+  </div>`;
+}
+
+/* ===================== Encabezado ===================== */
+const VIEWS = [['inicio', 'Inicio'], ['n1', 'Nivel 1'], ['n2', 'Nivel 2'], ['n3', 'Nivel 3'], ['cierre', 'Cierre']];
+function viewDone(v) {
+  if (v === 'inicio') return S.started;
+  if (v === 'n1') return doneCount(N1K) === 5;
+  if (v === 'n2') return doneCount(N2K) === 8;
+  if (v === 'n3') return doneCount(N3H) === 5;
+  return !!S.hecho.rep;
+}
+function header() {
+  const pg = progress();
+  return `<header class="tb"><div class="tb-in">
+    <div class="brand"><span>Biorefinería Challenge</span></div>
+    <nav class="steps" aria-label="Secciones del recurso">${VIEWS.map(([v, n]) => `<button type="button" class="step" id="nav-${v}" data-a="go" data-v="${v}" aria-label="${n}${viewDone(v) ? ', completado' : ''}" ${S.view === v ? 'aria-current="page"' : ''}><span>${n}</span>${viewDone(v) ? '<span class="mk" aria-hidden="true">✓</span>' : ''}</button>`).join('')}</nav>
+    <div class="cells" aria-label="Estado de la sesión">
+      <div class="cell"><span>Progreso</span><b>${pg} %</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pg}" aria-label="Progreso del recurso"><i style="width:${pg}%"></i></div></div>
+      <div class="cell"><span>Puntos</span><b>${total()} / 100</b></div>
+      <div class="cell"><span>Tiempo</span><b id="reloj">${fmtT(S.elapsed)}</b></div>
+    </div>
+    <button type="button" class="ghost" id="btn-reset" data-a="reset-ask">Reiniciar</button>
+  </div></header>`;
+}
+function confirmHTML() {
+  if (!S.confirm) return '';
+  return `<div class="confirm row" role="alertdialog" aria-labelledby="cf-t"><p class="grow" id="cf-t"><b>¿Reiniciar todo el recurso?</b> Se borrarán las respuestas, la puntuación y el tiempo de esta sesión.</p><button type="button" class="btn sec sm" id="cf-no" data-a="reset-no">Cancelar</button><button type="button" class="btn sm" id="cf-si" data-a="reset-si">Sí, reiniciar</button></div>`;
+}
+function navRow(prev, next, nextLabel) {
+  return `<div class="navrow">${prev ? `<button type="button" class="btn sec" id="nv-prev" data-a="go" data-v="${prev[0]}">← ${prev[1]}</button>` : '<span></span>'}${next ? `<button type="button" class="btn" id="nv-next" data-a="go" data-v="${next}">${nextLabel} →</button>` : ''}</div>`;
+}
+function lvlHead(eb, title, obj, min, pts, got) {
+  return `<div class="lvl-head"><div class="stack-s"><span class="eyebrow">${eb}</span><h2 id="vh" tabindex="-1">${title}</h2><p class="measure muted">${obj}</p></div>
+    <div class="lvl-meta"><span class="tag">Tiempo sugerido: ${min} min</span><span class="tag">${got} / ${pts} pts</span></div></div>`;
+}
+
+/* ===================== Inicio ===================== */
+function vInicio() {
+  return `<section class="hero">
+    <div class="stack">
+      <span class="eyebrow">Universidad EARTH · Gestión de Residuos Agroindustriales · IV año</span>
+      <h1 id="vh" tabindex="-1">Biorefinería Challenge</h1>
+      <p class="hero-sub">De los residuos agroindustriales a productos de valor</p>
+      <p class="measure"><b>Objetivo.</b> Comparar y seleccionar tecnologías de valorización de residuos agroindustriales, identificando sus fundamentos, materias primas, productos, variables críticas de operación y limitaciones ambientales, para justificar decisiones técnicas en escenarios agroindustriales.</p>
+      <div class="row"><button type="button" class="btn" id="btn-start" data-a="start">${S.started ? 'Continuar' : 'Comenzar el desafío'} →</button><span class="small muted">30 minutos · individual o en parejas · 100 puntos</span></div>
+    </div>
+    <div class="plano" role="img" aria-label="Esquema: tres residuos entran a una biorrefinería con cuatro unidades de proceso y salen productos de valor por identificar">
+      <div class="plano-body">
+        <div class="plano-col">${ico('r_cit', 'res')}${ico('r_ace', 'res')}${ico('r_pin', 'res')}<span class="mono">RESIDUOS</span></div>
+        <div class="stack-s" style="align-items:center"><span class="arrow">→ → →</span>
+          <div class="plano-units">${['A', 'B', 'C', 'D'].map((k, i) => `<div class="unit-mini">${ico(TEC_GLY[k])}<span class="mono">U-${i + 1}0${i + 1}</span></div>`).join('')}</div>
+          <span class="arrow">→ → →</span></div>
+        <div class="plano-col">${ico('p_ae', 'pro')}${ico('p_bd', 'pro')}${ico('p_ce', 'pro')}<span class="mono">PRODUCTOS</span></div>
+      </div>
+      <div class="plano-foot"><div>Diagrama de bloques · biorrefinería</div><div>Plano BC-001</div><div>Rev. 0</div></div>
+    </div>
+  </section>
+  <section class="lvl-list">
+    <div class="lvl-item stack-s"><span class="mono">NIVEL 1 · 5 MIN · 20 PTS</span><h3>Identifica el potencial del residuo</h3><p class="small">Arma rutas residuo → tecnología → producto.</p></div>
+    <div class="lvl-item stack-s"><span class="mono">NIVEL 2 · 10 MIN · 40 PTS</span><h3>Laboratorio virtual de procesos</h3><p class="small">Cuatro estaciones: etapas, variables críticas y un caso de análisis.</p></div>
+    <div class="lvl-item stack-s"><span class="mono">NIVEL 3 · 10 MIN · 40 PTS</span><h3>Diseña una biorrefinería</h3><p class="small">Compara alternativas, decide y justifica con evidencia técnica.</p></div>
+    <div class="lvl-item stack-s"><span class="mono">CIERRE · 5 MIN</span><h3>Evaluación y reflexión</h3><p class="small">Resultados, reflexión final y reporte para tu bitácora.</p></div>
+  </section>
+  <section class="card stack">
+    <h3>Cómo funciona</h3>
+    <ol class="inst measure">
+      <li>Avanza a tu ritmo. Puedes volver a cualquier nivel desde la barra superior; el progreso se conserva durante la sesión.</li>
+      <li>Cada respuesta recibe retroalimentación inmediata. Si te equivocas, lee la explicación y la pista, y vuelve a intentarlo: el puntaje disminuye con cada intento adicional.</li>
+      <li>Todas las actividades funcionan con clic, toque o teclado (Tab para moverte, Enter o Espacio para seleccionar). En el Nivel 1 también puedes arrastrar las tarjetas.</li>
+      <li>Puedes repetir una actividad terminada en modo práctica. La puntuación registrada es la de tu primera resolución.</li>
+      <li>La decisión del Nivel 3 y la reflexión final se valoran con una rúbrica visible y quedan sujetas a revisión docente. El recurso no califica textos de forma automática.</li>
+      <li>No escribas nombres, correos ni otros datos personales. Al final copia o descarga tu reporte y entrégalo como indique la docente.</li>
+    </ol>
+  </section>`;
+}
+
+/* ===================== Nivel 1 ===================== */
+const cardInfo = (id) => id[0] === 'r' ? RES[id] : id[0] === 'p' ? PRO[id] : TEC[id.slice(2)];
+const cardIco = (id) => id[0] === 't' ? ico(TEC_GLY[id.slice(2)], 'tec') : ico(id, id[0] === 'r' ? 'res' : 'pro');
+const cardUsed = (id) => id[0] !== 'r' && S.n1.lines.some(L => L[id[0]] === id);
+function vN1() {
+  const n = S.n1, allOk = n.lines.every(L => L.ok);
+  const tray = (type, title, ids, note) => `<div class="tray"><h4>${title}</h4><div class="tray-cards">${ids.map(id => {
+    const c = cardInfo(id), used = cardUsed(id);
+    return `<button type="button" class="cardbtn" id="c-${id}" data-a="n1-pick" data-c="${id}" draggable="${used ? 'false' : 'true'}" aria-pressed="${n.sel === id ? 'true' : 'false'}" ${used ? 'disabled' : ''}>${cardIco(id)}<span><b>${esc(c.n)}</b><small>${esc(c.d)}${used ? ' · en uso' : ''}</small></span></button>`;
+  }).join('')}</div><p class="small muted">${note}</p></div>`;
+  const slot = (L, i, type, label) => {
+    const id = L[type], c = id ? cardInfo(id) : null;
+    const target = !L.ok && n.sel && n.sel[0] === type && !id;
+    const bad = L.bad.includes(type);
+    return `<button type="button" class="slot${id ? ' fill' : ''}${target ? ' target' : ''}${bad ? ' bad' : ''}" id="s-${i}-${type}" data-a="n1-slot" data-l="${i}" data-t="${type}" ${L.ok ? 'disabled' : ''} aria-label="Ruta ${i + 1}, ${label}: ${c ? c.n + (L.ok ? '' : '. Pulsa para retirar') : 'vacío'}">${id ? cardIco(id) : ''}<span><small>${label}${bad ? ' · revisar' : ''}</small>${c ? `<b>${esc(c.n)}</b>` : '<span class="muted">Vacío</span>'}</span></button>`;
+  };
+  const lines = n.lines.map((L, i) => `<div class="line${L.ok ? ' done' : ''}">
+      <div class="line-row"><span class="line-n">RUTA ${i + 1}</span>${slot(L, i, 'r', 'Residuo')}<span class="arrow" aria-hidden="true">→</span>${slot(L, i, 't', 'Tecnología')}<span class="arrow" aria-hidden="true">→</span>${slot(L, i, 'p', 'Producto')}
+      ${L.ok ? `<span class="tag ok">✓ ${S.pts['n1_' + L.t.slice(2)] != null && !n.pract ? S.pts['n1_' + L.t.slice(2)] + ' pts' : 'válida'}</span>` : `<button type="button" class="btn blue sm" id="v-${i}" data-a="n1-check" data-l="${i}">Verificar</button>`}</div>
+      ${fbHTML(L.fb)}</div>`).join('');
+  return `${lvlHead('Nivel 1', 'Identifica el potencial del residuo', 'Relaciona cada residuo con una tecnología de valorización y con el producto que se obtiene.', 5, 20, sum(N1K))}
+  <section class="card stack">
+    <p class="measure"><b>Instrucción.</b> Selecciona una tarjeta y después la casilla donde va, o arrástrala. Completa cuatro rutas, una por tecnología, y verifica cada una. Las tarjetas de residuo pueden usarse en más de una ruta. Cada ruta vale 4 puntos al primer intento.</p>
+    ${n.pract ? '<p class="tag">Modo práctica: esta repetición no cambia la puntuación registrada.</p>' : ''}
+    <div class="trays">
+      ${tray('r', 'Residuos', N1_ORD.r, 'Reutilizables: un residuo puede alimentar varias rutas.')}
+      ${tray('t', 'Tecnologías', N1_ORD.t.map(k => 't_' + k), 'Cada tecnología se usa una vez.')}
+      ${tray('p', 'Productos', N1_ORD.p, 'Cada producto se usa una vez.')}
+    </div>
+    ${n.msg ? fbHTML({ k: 'info', t: n.msg }) : ''}
+    <div class="lines">${lines}</div>
+  </section>
+  ${allOk ? `<section class="card stack"><h3>Ruta en cascada</h3>${chHTML('n1_casc')}</section>` : ''}
+  ${doneCount(N1K) === 5 ? `<div class="row"><button type="button" class="btn sec sm" id="rep-n1" data-a="n1-rep">Repetir el nivel en modo práctica</button><span class="small muted">No modifica la puntuación registrada.</span></div>` : ''}
+  ${navRow(['inicio', 'Inicio'], 'n2', 'Ir al Nivel 2')}`;
+}
+function n1Place(i, id) {
+  const n = S.n1, L = n.lines[i], type = id[0];
+  if (L.ok) return;
+  if (type !== 'r') n.lines.forEach(X => { if (!X.ok && X[type] === id) X[type] = null; });
+  if (cardUsed(id)) return;
+  L[type] = id; L.bad = []; L.fb = null; n.sel = null; n.msg = null;
+}
+function n1Check(i) {
+  const n = S.n1, L = n.lines[i];
+  if (!(L.r && L.t && L.p)) { L.fb = { k: 'info', t: 'Completa las tres casillas (residuo, tecnología y producto) antes de verificar.' }; return; }
+  L.tries++;
+  const k = L.t.slice(2), T = TEC[k], okR = T.compat.includes(L.r), okP = T.prod === L.p;
+  const desc = `${RES[L.r].n} → ${T.n} → ${PRO[L.p].n}`;
+  if (okR && okP) {
+    L.ok = true; L.bad = []; L.fb = { k: 'ok', t: N1_OK[k + '_' + L.r] };
+    award('n1_' + k, PT4[Math.min(L.tries - 1, 3)], { tries: L.tries, errs: L.errs.slice(), resp: [desc] });
+  } else {
+    L.errs.push(desc); L.bad = []; const items = [];
+    if (!okR) { L.bad.push('r'); items.push({ t: `${T.req} ${RES[L.r].car} Pista: ${T.pista}` }); }
+    if (!okP) { L.bad.push('p'); items.push({ t: `La ${T.n.toLowerCase()} ${T.gen}: de ahí no se obtiene «${PRO[L.p].n}». Pista: identifica qué sustancia sale de esa transformación.` }); }
+    L.fb = { k: 'bad', items };
+  }
+}
+
+/* ===================== Nivel 2 ===================== */
+function simular(k) {
+  const E = EST[k], st = S.n2[k], lv = {}, notas = []; let sev = 0, cambios = 0;
+  E.inds.forEach(([id]) => { lv[id] = 0; });
+  E.vars.forEach(v => {
+    const o = v.ops[st.vars[v.id]];
+    if (st.vars[v.id] !== v.ref) cambios++;
+    if (o[1]) Object.keys(o[1]).forEach(i => { lv[i] += o[1][i]; });
+    if (o[2]) notas.push(o[2]);
+    if (o[3]) sev += o[3];
+  });
+  if (k === 'B' && cambios) {
+    if (sev < 0) { lv.recu = Math.max(sev, -2); notas.push('Con un tratamiento más suave que la referencia se recupera menos pectina, porque parte queda en el sólido agotado.'); }
+    else if (sev === 0) { lv.recu = 0; notas.push('Los cambios se compensan en parte; el balance real debe verificarse de forma experimental.'); }
+    else if (sev === 1) { lv.recu = 1; notas.push('Un aumento moderado de la severidad puede elevar la pectina recuperable, a costa de cadenas algo más cortas.'); }
+    else if (sev === 2) { lv.recu = 0; notas.push('Con dos factores más severos, la ganancia por solubilización empieza a compensarse con la pérdida de fragmentos de bajo peso molecular, que no precipitan con alcohol.'); }
+    else { lv.recu = -1; notas.push('Con severidad alta en los tres factores, los fragmentos de bajo peso molecular dejan de precipitar con alcohol: la pectina recuperable puede caer y la capacidad gelificante disminuye.'); }
+  }
+  Object.keys(lv).forEach(i => { lv[i] = Math.max(-2, Math.min(2, lv[i])); });
+  return { lv, notas, cambios };
+}
+function vEtapas(k) {
+  const E = EST[k], st = S.n2[k], N = E.etapas.length, done = st.placed >= N;
+  const units = E.etapas.map((e, i) => {
+    const set = i < st.placed, next = i === st.placed;
+    const inner = `<span class="mono">${e.tag}</span><span class="io in">${e.inl ? esc(e.inl) : ''}</span><span class="gly">${GLY[e.g]}</span><b>${set ? esc(e.n) : 'Etapa ' + (i + 1) + ': ?'}</b><span class="io out">${e.out ? esc(e.out) : ''}</span>`;
+    const u = set ? `<button type="button" class="unit set${st.ver === i ? ' sel' : ''}" id="u-${k}-${i}" data-a="n2-ver" data-i="${i}" aria-label="Etapa ${i + 1}: ${esc(e.n)}. Ver descripción">${inner}</button>`
+      : `<div class="unit${next ? ' next' : ''}" aria-label="Etapa ${i + 1} por identificar">${inner}</div>`;
+    return u + (i < N - 1 ? '<span class="pfd-arrow" aria-hidden="true">→</span>' : `<span class="pfd-arrow" aria-hidden="true">→</span><div class="unit set" style="flex:0 0 110px;border-color:var(--accent)"><span class="mono">PRODUCTO</span><span class="gly" style="color:var(--accent)">${GLY[TEC[k].prod]}</span><b>${esc(E.final)}</b></div>`);
+  }).join('');
+  const chips = done ? '' : `<div class="stack-s"><p><b>¿Qué etapa corresponde a la posición ${st.placed + 1}?</b> <span class="muted small">Observa el equipo y las corrientes que entran y salen.</span></p><div class="chips">${E.orden.filter(i => i >= st.placed).map(i => `<button type="button" class="chip" id="ck-${k}-${i}" data-a="n2-etapa" data-i="${i}">${esc(E.etapas[i].n)}</button>`).join('')}</div></div>`;
+  const det = done && st.ver != null ? `<div class="fb info"><strong>${E.etapas[st.ver].tag} · ${esc(E.etapas[st.ver].n)}</strong><p>${esc(E.etapas[st.ver].d)}</p></div>` : fbHTML(st.fbE);
+  const got = S.pts['n2_' + k + '_et'];
+  return `<div class="stack">
+    <p class="measure">Identifica las etapas del proceso en orden. Vale 4 puntos sin errores; cada error resta 1 punto (mínimo 1).</p>
+    <div class="pfd" tabindex="0" role="group" aria-label="Diagrama de flujo del proceso de ${esc(E.corto)}">${units}</div>
+    ${chips}
+    ${det}
+    ${done ? `<div class="row"><span class="tag ok">✓ Diagrama completo${got != null ? ' · ' + got + ' de 4 pts registrados' : ''}</span><span class="small muted">Selecciona una unidad para leer su descripción.</span></div>` : ''}
+    <div class="ficha"><h4>Ficha técnica</h4>${E.ficha.map((f, i) => `<details ${i === 0 ? 'open' : ''}><summary>${esc(f[0])}</summary><p class="measure">${esc(f[1])}</p></details>`).join('')}</div>
+  </div>`;
+}
+function vVars(k) {
+  const E = EST[k], st = S.n2[k], sim = simular(k);
+  const ctrls = E.vars.map(v => `<fieldset class="seg"><legend>${esc(v.n)}</legend><div class="seg-in">${v.ops.map((o, i) => `<label><input type="radio" name="var-${k}-${v.id}" id="var-${k}-${v.id}-${i}" data-c="n2-var" data-v="${v.id}" value="${i}" ${st.vars[v.id] === i ? 'checked' : ''}>${esc(o[0])}</label>`).join('')}</div></fieldset>`).join('');
+  const inds = E.inds.map(([id, n]) => {
+    const l = sim.lv[id];
+    return `<div class="ind"><div class="ind-lab"><span>${esc(n)}</span><span>${LV[l][1]} ${LV[l][0]}</span></div><div class="meter" aria-hidden="true">${[-2, -1, 0, 1, 2].map(x => `<i class="${x === l ? 'on' : ''}${x === 0 ? ' ref' : ''}"></i>`).join('')}</div></div>`;
+  }).join('');
+  return `<div class="stack">
+    <p class="measure">Cambia una o varias condiciones y observa la tendencia esperada frente a la condición de referencia. Las tendencias son cualitativas: no representan rendimientos ni resultados numéricos.</p>
+    <div class="vars">
+      <div class="stack">${ctrls}<div><button type="button" class="btn sec sm" id="vr-${k}" data-a="n2-ref">Volver a la referencia</button></div></div>
+      <div class="stack" aria-live="polite">
+        <h4>Tendencia respecto a la referencia</h4>
+        ${inds}
+        <h4>Interpretación técnica</h4>
+        ${sim.notas.length ? `<ul class="notes">${sim.notas.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="muted">Todas las variables están en la condición de referencia. Modifica alguna para ver su efecto.</p>'}
+      </div>
+    </div>
+  </div>`;
+}
+function vN2() {
+  const k = S.n2.est, E = EST[k], st = S.n2[k];
+  const num = { A: 1, B: 2, C: 3, D: 4 };
+  const estDone = (x) => S.hecho['n2_' + x + '_et'] && S.hecho['n2_' + x + '_ch'];
+  const tabs = ['A', 'B', 'C', 'D'].map(x => `<button type="button" class="est-tab" role="tab" id="est-${x}" data-a="n2-est" data-e="${x}" aria-selected="${x === k ? 'true' : 'false'}">${ico(TEC_GLY[x], 'tec')}<span><span class="mono">ESTACIÓN ${num[x]}${estDone(x) ? ' · ✓' : ''}</span><b>${EST[x].corto}</b><span class="small muted">${sum(['n2_' + x + '_et', 'n2_' + x + '_ch'])} / 10 pts</span></span></button>`).join('');
+  const sub = [['etapas', '1 · Proceso y etapas', S.hecho['n2_' + k + '_et']], ['vars', '2 · Variables', false], ['reto', '3 · Desafío', S.hecho['n2_' + k + '_ch']]];
+  const body = st.tab === 'etapas' ? vEtapas(k) : st.tab === 'vars' ? vVars(k) : chHTML('n2_' + k + '_ch');
+  const order = ['A', 'B', 'C', 'D'], nx = order[order.indexOf(k) + 1];
+  const nextBtn = st.tab === 'etapas' ? `<button type="button" class="btn blue sm" id="sb-next" data-a="n2-tab" data-t="vars">Continuar a Variables →</button>`
+    : st.tab === 'vars' ? `<button type="button" class="btn blue sm" id="sb-next" data-a="n2-tab" data-t="reto">Continuar al Desafío →</button>`
+      : nx ? `<button type="button" class="btn blue sm" id="sb-next" data-a="n2-est" data-e="${nx}">Siguiente estación: ${EST[nx].corto} →</button>` : '';
+  return `${lvlHead('Nivel 2', 'Laboratorio virtual de procesos', 'Analiza las variables críticas de cada tecnología y sus consecuencias. Cada estación vale 10 puntos: 4 por las etapas y 6 por el desafío.', 10, 40, sum(N2K))}
+  <div class="est-tabs" role="tablist" aria-label="Estaciones">${tabs}</div>
+  <section class="card stack" role="tabpanel" aria-labelledby="est-${k}">
+    <div class="stack-s"><span class="eyebrow">Estación ${num[k]} · Materia prima: ${esc(E.mp)}</span><h3>${esc(E.n)}</h3></div>
+    <div class="subtabs" role="tablist" aria-label="Actividades de la estación">${sub.map(([t, n, d]) => `<button type="button" class="subtab" role="tab" id="st-${t}" data-a="n2-tab" data-t="${t}" aria-selected="${st.tab === t ? 'true' : 'false'}">${n}${d ? ' ✓' : ''}</button>`).join('')}</div>
+    ${body}
+    <div class="row">${nextBtn}${estDone(k) ? `<button type="button" class="btn sec sm" id="rep-est" data-a="n2-rep">Repetir la estación en modo práctica</button>` : ''}</div>
+  </section>
+  ${navRow(['n1', 'Nivel 1'], 'n3', 'Ir al Nivel 3')}`;
+}
+function n2Etapa(i) {
+  const k = S.n2.est, E = EST[k], st = S.n2[k], N = E.etapas.length;
+  if (st.placed >= N) return;
+  if (i === st.placed) {
+    st.placed++; st.ver = i; st.fbE = { k: 'ok', t: `Etapa ${i + 1}: ${E.etapas[i].n}. ${E.etapas[i].d}` };
+    if (st.placed === N) award('n2_' + k + '_et', PT4[Math.min(st.errE, 3)], { tries: st.errE + 1, errs: st.errsE.slice(), resp: [E.etapas.map(e => e.n).join(' → ')] });
+  } else {
+    st.errE++; st.errsE.push(`posición ${st.placed + 1}: «${E.etapas[i].n}»`);
+    st.fbE = { k: 'bad', t: `«${E.etapas[i].n}» todavía no corresponde a la posición ${st.placed + 1}. Pista: en este punto el proceso necesita ${E.etapas[st.placed].fin}.` };
+  }
+}
+
+/* ===================== Nivel 3 ===================== */
+const N3S = ['Residuo', 'Tecnologías viables', 'Matriz comparativa', 'Corrientes de salida', 'Decisión y justificación'];
+function n3Max() {
+  const n = S.n3; if (!n.res) return 0;
+  if (!chSt('n3_via').ok) return 1;
+  if (!matDone()) return 2;
+  if (!chSt('n3_out').ok) return 3;
+  return 4;
+}
+const matDone = () => CRIT.every((_, i) => S.n3.mat[i + 'a'] != null && S.n3.mat[i + 'b'] != null);
+function decOps() { const R = R3[S.n3.res]; const o = [['a', R.alt.a.n], ['b', R.alt.b.n]]; if (R.extra) o.push([R.extra.id, R.extra.n]); return o; }
+function vN3() {
+  const n = S.n3, R = n.res ? R3[n.res] : null, max = n3Max();
+  const steps = `<nav class="substeps" aria-label="Pasos del desafío">${N3S.map((s, i) => `<button type="button" class="substep" id="n3s-${i}" data-a="n3-step" data-i="${i}" ${i > max ? 'disabled' : ''} ${n.step === i ? 'aria-current="step"' : ''}><span class="mono">${i + 1}</span>${s}${S.hecho[N3H[i]] ? ' ✓' : ''}</button>`).join('')}</nav>`;
+  let body = '';
+  if (n.step === 0) {
+    body = `<div class="stack"><p><b>Paso 1.</b> Selecciona el residuo que vas a valorizar.</p>
+      <div class="res-grid">${Object.keys(R3).map(k => `<button type="button" class="pick" id="pk-${k}" data-a="n3-res" data-r="${k}" aria-pressed="${n.res === k ? 'true' : 'false'}">${ico(R3[k].ico, 'res')}<h3>${R3[k].n}</h3><p class="small">${R3[k].d}</p>${n.res === k ? '<span class="tag ok">✓ Seleccionado</span>' : ''}</button>`).join('')}</div>
+      ${n.res && max > 1 ? '<p class="small muted">Si cambias de residuo se reinician los pasos 2 a 5. Los puntos ya registrados en los pasos 2 y 4 se conservan.</p>' : ''}
+      ${n.res ? '<div><button type="button" class="btn blue sm" id="n3-next" data-a="n3-step" data-i="1">Continuar al paso 2 →</button></div>' : ''}</div>`;
+  } else if (n.step === 1) {
+    body = `<div class="stack"><p><b>Paso 2.</b> Residuo: ${R.n}. Identifica las alternativas de valorización técnicamente viables.</p>${chHTML('n3_via')}
+      ${chSt('n3_via').ok ? `<div class="scen"><span class="eyebrow">Alternativas por comparar</span><p><b>1.</b> ${R.alt.a.n}</p><p><b>2.</b> ${R.alt.b.n}</p></div><div><button type="button" class="btn blue sm" id="n3-next" data-a="n3-step" data-i="2">Continuar a la matriz →</button></div>` : ''}</div>`;
+  } else if (n.step === 2) {
+    const rows = CRIT.map((c, i) => {
+      const cell = (col) => `<td><fieldset class="rate">${RATE.map((r, j) => `<label><input type="radio" name="m-${i}-${col}" id="m-${i}-${col}-${j}" data-c="n3-mat" data-k="${i}${col}" value="${j}" ${n.mat[i + col] === j ? 'checked' : ''} aria-label="${c}, ${R.alt[col].c}: ${r}">${r}</label>`).join('')}</fieldset></td>`;
+      const both = n.mat[i + 'a'] != null && n.mat[i + 'b'] != null;
+      return `<tr><th scope="row">${c}</th>${cell('a')}${cell('b')}</tr>${both ? `<tr class="guia"><td colspan="3"><b>Orientación técnica.</b> ${esc(R.guia[i])}</td></tr>` : ''}`;
+    }).join('');
+    const nset = Object.keys(n.mat).length;
+    body = `<div class="stack"><p class="measure"><b>Paso 3.</b> Valora cada alternativa en los siete criterios. Al completar una fila aparece una orientación técnica para contrastar tu valoración; no hay una única respuesta correcta, porque depende de los supuestos del caso.</p>
+      <div class="tablewrap" tabindex="0" role="group" aria-label="Matriz comparativa"><table class="mx"><thead><tr><th scope="col">Criterio</th><th scope="col">${R.alt.a.c}</th><th scope="col">${R.alt.b.c}</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="row"><span class="tag ${matDone() ? 'ok' : 'pend'}">${nset} de 14 valoraciones</span>${matDone() ? '<button type="button" class="btn blue sm" id="n3-next" data-a="n3-step" data-i="3">Continuar al paso 4 →</button>' : ''}</div></div>`;
+  } else if (n.step === 3) {
+    body = `<div class="stack"><p><b>Paso 4.</b> Identifica el producto principal y las corrientes secundarias de cada alternativa.</p>${chHTML('n3_out')}
+      ${chSt('n3_out').ok ? '<div><button type="button" class="btn blue sm" id="n3-next" data-a="n3-step" data-i="4">Continuar a la decisión →</button></div>' : ''}</div>`;
+  } else {
+    const ops = decOps();
+    const wj = words(n.just);
+    body = `<div class="stack">
+      <p><b>Paso 5.</b> Selecciona una alternativa y justifícala con evidencia técnica.</p>
+      <div class="two">
+        <fieldset class="parte"><legend>Alternativa seleccionada</legend>${ops.map(([id, t]) => `<label class="radio-card"><input type="radio" name="dec" id="dec-${id}" data-c="n3-dec" value="${id}" ${n.dec === id ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
+          ${n.dec ? `<div class="fb info"><strong>Supuestos que sostienen esta decisión</strong><p>${esc(R.sup[n.dec])}</p><p class="small">Otra alternativa también puede ser defendible bajo supuestos distintos.</p></div>` : ''}</fieldset>
+        <div class="stack">
+          <div><label class="fld" for="f-sup">Supuestos de tu decisión (escala, calidad del residuo, mercado, recursos)</label><textarea id="f-sup" data-f="n3.sup" rows="3" style="min-height:80px">${esc(n.sup)}</textarea></div>
+          <div><label class="fld" for="f-just">Justificación técnica (mínimo 40 palabras)</label><textarea id="f-just" data-f="n3.just" rows="6">${esc(n.just)}</textarea><span class="wc"><span data-wc="n3.just">${wj}</span> palabras</span></div>
+        </div>
+      </div>
+      <h4>Rúbrica de la decisión · 24 puntos · autoevaluación sujeta a revisión docente</h4>
+      <p class="measure small">El recurso no califica tu texto. Autoevalúa tu trabajo con la rúbrica; la docente confirmará o ajustará estos puntos al revisar el reporte.</p>
+      <div class="tablewrap" tabindex="0" role="group" aria-label="Rúbrica de la decisión"><table class="rub"><thead><tr><th scope="col">Criterio y descriptor del nivel Logrado</th><th scope="col">Tu autoevaluación</th></tr></thead><tbody>
+        ${RUB.map((r, i) => `<tr><th scope="row">${r[0]}<br><span class="small" style="font-weight:400">${r[1]}</span></th><td><fieldset class="rate">${RUB_LV.map(([v, t]) => `<label><input type="radio" name="rub-${i}" id="rub-${i}-${v}" data-c="rub" data-i="${i}" value="${v}" ${S.rub[i] === v ? 'checked' : ''} aria-label="${r[0]}: ${t}, ${v} puntos">${t} (${v})</label>`).join('')}</fieldset></td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="small muted">Logrado: cumple el descriptor por completo. En desarrollo: lo cumple con vacíos. Inicial: lo menciona de forma superficial. No evidenciado: no aparece.</p>
+      ${n.msg ? fbHTML(n.msg) : ''}
+      <div class="row"><button type="button" class="btn" id="n3-reg" data-a="n3-reg">${S.hecho.n3_dec ? 'Actualizar la decisión registrada' : 'Registrar la decisión'}</button><span class="tag">Autoevaluación: ${rubSum()} / 24 pts (provisional)</span></div>
+    </div>`;
+  }
+  return `${lvlHead('Nivel 3', 'Desafío de ingeniería: diseña una biorrefinería', 'Selecciona y justifica una alternativa de valorización. 16 puntos se asignan de forma automática (pasos 2 y 4) y 24 mediante rúbrica.', 10, 40, sum(N3K) + rubSum())}
+  <div class="scen"><span class="eyebrow">Escenario</span><p class="measure">${ESCENARIO}</p></div>
+  ${steps}
+  <section class="card">${body}</section>
+  ${navRow(['n2', 'Nivel 2'], 'cierre', 'Ir al Cierre')}`;
+}
+function n3Reg() {
+  const n = S.n3, falt = [];
+  if (!n.dec) falt.push('selecciona una alternativa');
+  if (words(n.just) < 40) falt.push(`amplía la justificación (llevas ${words(n.just)} de 40 palabras)`);
+  if (!rubDone()) falt.push('completa los cuatro criterios de la rúbrica');
+  if (falt.length) { n.msg = { k: 'info', t: 'Para registrar la decisión: ' + falt.join('; ') + '.' }; return; }
+  S.hecho.n3_dec = 1;
+  n.msg = { k: 'ok', t: 'Decisión registrada. Puedes editarla y volver a registrarla antes de generar el reporte. Recuerda que los 24 puntos de la rúbrica son provisionales hasta la revisión docente.' };
+}
+
+/* ===================== Cierre ===================== */
+function nivel(t) { return t >= 85 ? 'Avanzado' : t >= 70 ? 'Competente' : t >= 50 ? 'En desarrollo' : 'Inicial'; }
+function analisis() {
+  const f = [], r = [], p = [];
+  COMP.forEach(c => {
+    if (!c.k.every(k => k in S.pts)) { p.push(c.t); return; }
+    const q = sum(c.k) / c.max;
+    if (q >= 0.8) f.push(c.t); else if (q < 0.6) r.push(c.t);
+  });
+  return { f, r, p };
+}
+function reporte() {
+  const L = [], n = S.n3, R = n.res ? R3[n.res] : null, t = total();
+  const item = (key, name, max) => {
+    const g = S.log[key];
+    if (!g) { L.push(`- ${name}: sin completar.`); return; }
+    L.push(`- ${name}: ${S.pts[key]}/${max} pts · ${g.tries} intento(s)${g.ctx ? ' · ' + g.ctx : ''}`);
+    g.resp.forEach(x => L.push(`    Respuesta final: ${x}`));
+    if (g.errs.length) g.errs.forEach(x => L.push(`    Corregido: ${x}`)); else L.push('    Sin correcciones.');
+  };
+  L.push('BIOREFINERÍA CHALLENGE · REPORTE DE APRENDIZAJE');
+  L.push('De los residuos agroindustriales a productos de valor');
+  L.push('Universidad EARTH · Gestión de Residuos Agroindustriales');
+  L.push(`Fecha: ${new Date().toLocaleDateString('es-CR')} · Tiempo de trabajo: ${fmtT(S.elapsed)} (min:s)`);
+  L.push('Identificación: agrégala al entregar, según indique la docente.');
+  L.push('');
+  L.push('1. RESULTADOS POR NIVEL');
+  L.push(`Nivel 1. Potencial del residuo: ${sum(N1K)}/20`);
+  L.push(`Nivel 2. Laboratorio virtual: ${sum(N2K)}/40 (` + ['A', 'B', 'C', 'D'].map((k, i) => `E${i + 1} ${EST[k].corto}: ${sum(['n2_' + k + '_et', 'n2_' + k + '_ch'])}/10`).join('; ') + ')');
+  L.push(`Nivel 3. Biorrefinería: automática ${sum(N3K)}/16 + autoevaluación con rúbrica ${rubSum()}/24 (provisional)`);
+  L.push(`Total provisional: ${t}/100 · Nivel alcanzado: ${nivel(t)}`);
+  L.push('Revisión docente de la rúbrica: ____/24 · Total definitivo: ____/100');
+  L.push('');
+  L.push('2. RESPUESTAS SELECCIONADAS Y CORRECCIONES');
+  L.push('Nivel 1');
+  ['A', 'B', 'C', 'D'].forEach(k => item('n1_' + k, 'Ruta de ' + TEC[k].n.toLowerCase(), 4));
+  item('n1_casc', 'Ruta en cascada', 4);
+  L.push('Nivel 2');
+  ['A', 'B', 'C', 'D'].forEach((k, i) => { item('n2_' + k + '_et', `E${i + 1} ${EST[k].corto}, etapas`, 4); item('n2_' + k + '_ch', `E${i + 1} ${EST[k].corto}, desafío`, 6); });
+  L.push('Nivel 3');
+  item('n3_via', 'Tecnologías viables', 6);
+  item('n3_out', 'Producto principal y corrientes secundarias', 10);
+  const reps = Object.keys(S.reps).map(k => `${k}: ${S.reps[k]}`).join('; ');
+  if (reps) L.push(`Repeticiones en modo práctica (no puntúan): ${reps}`);
+  if (S.cambios) L.push(`Cambios de residuo en el Nivel 3: ${S.cambios}`);
+  L.push('');
+  L.push('3. DECISIÓN TECNOLÓGICA FINAL');
+  if (R) {
+    L.push(`Residuo seleccionado: ${R.n}`);
+    L.push(`Alternativa 1: ${R.alt.a.n}`);
+    L.push(`Alternativa 2: ${R.alt.b.n}`);
+    L.push('Matriz comparativa (alternativa 1 / alternativa 2):');
+    CRIT.forEach((c, i) => L.push(`- ${c}: ${n.mat[i + 'a'] != null ? RATE[n.mat[i + 'a']] : 'sin valorar'} / ${n.mat[i + 'b'] != null ? RATE[n.mat[i + 'b']] : 'sin valorar'}`));
+    const d = decOps().find(o => o[0] === n.dec);
+    L.push(`Decisión: ${d ? d[1] : 'sin registrar'}`);
+    L.push(`Supuestos: ${n.sup.trim() || 'no declarados'}`);
+    L.push('Justificación técnica del estudiante:');
+    L.push(n.just.trim() || 'sin redactar');
+    L.push('Autoevaluación con rúbrica (pendiente de revisión docente):');
+    RUB.forEach((r, i) => L.push(`- ${r[0]}: ${S.rub[i] == null ? 'sin valorar' : RUB_LV.find(x => x[0] === S.rub[i])[1] + ' (' + S.rub[i] + '/6)'}`));
+  } else L.push('Sin completar.');
+  L.push('');
+  L.push('4. REFLEXIÓN FINAL');
+  REFLEX.forEach((q, i) => { L.push(`${i + 1}. ${q}`); L.push(S.cierre['r' + i].trim() || 'sin responder'); });
+  L.push('');
+  L.push(`5. CONCLUSIÓN TÉCNICA (${words(S.cierre.concl)} palabras)`);
+  L.push(S.cierre.concl.trim() || 'sin redactar');
+  L.push('');
+  L.push(NOTA_IA);
+  return L.join('\n');
+}
+function vCierre() {
+  const t = total(), a = analisis(), c = S.cierre;
+  const bars = [['Nivel 1', sum(N1K), 20], ['Nivel 2', sum(N2K), 40], ['Nivel 3 · automática', sum(N3K), 16], ['Nivel 3 · rúbrica', rubSum(), 24]]
+    .map(([n, v, m]) => `<div class="bar"><span>${n}</span><div class="track" role="img" aria-label="${n}: ${v} de ${m} puntos"><i style="width:${Math.round(100 * v / m)}%"></i></div><b>${v} / ${m}</b></div>`).join('');
+  const lst = (arr, empty) => arr.length ? `<ul class="plain">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : `<p class="muted">${empty}</p>`;
+  const fin = t >= 85 ? 'Dominas la relación entre composición del residuo, tecnología y variables críticas, y sostienes tus decisiones con evidencia. El siguiente paso es contrastar tus supuestos con datos reales de proceso y de mercado.'
+    : t >= 70 ? 'Seleccionas tecnologías con criterio y reconoces sus variables críticas. Revisa los conceptos señalados y refuerza la justificación de tus decisiones con evidencia técnica específica.'
+      : t >= 50 ? 'Reconoces las rutas de valorización, pero el análisis de variables y consecuencias todavía requiere práctica. Repite en modo práctica las estaciones señaladas y relee sus fichas técnicas.'
+        : 'Conviene retomar los fundamentos de cada proceso antes de comparar alternativas. Vuelve a los niveles pendientes o señalados, lee la retroalimentación y discute tus dudas con la docente.';
+  const wc = words(c.concl);
+  return `${lvlHead('Cierre', 'Evaluación y reflexión', 'Revisa tus resultados, responde las preguntas de reflexión y genera el reporte para tu bitácora o el aula virtual.', 5, 100, t)}
+  <section class="card score">
+    <div><div class="big">${t}<small> / 100</small></div><p class="tag" style="display:inline-block;margin-top:8px">Nivel alcanzado: <b>${nivel(t)}</b></p><p class="small muted" style="margin-top:6px">Incluye ${rubSum()} pts provisionales de la rúbrica.</p></div>
+    <div class="bars">${bars}</div>
+  </section>
+  <section class="two">
+    <div class="card stack-s"><h3>Fortalezas</h3>${lst(a.f, 'Aún no hay componentes con desempeño alto registrado.')}</div>
+    <div class="card stack-s"><h3>Conceptos que requieren revisión</h3>${lst(a.r, 'Ningún componente completado quedó por debajo del 60 %.')}${a.p.length ? `<h4 style="margin-top:8px">Sin completar</h4>${lst(a.p, '')}` : ''}</div>
+  </section>
+  <section class="card stack-s"><h3>Retroalimentación final</h3><p class="measure">${fin}</p>${rubDone() ? '' : '<p class="small muted">La autoevaluación con rúbrica del Nivel 3 está incompleta: el total todavía no incluye esos puntos.</p>'}</section>
+  <section class="card stack">
+    <h3>Reflexión final</h3>
+    <p class="small muted measure">Obligatoria y sin puntuación automática. La docente la revisa en el reporte. Responde cada pregunta con al menos 15 palabras.</p>
+    ${REFLEX.map((q, i) => `<div><label class="fld" for="f-r${i}">${i + 1}. ${q}</label><textarea id="f-r${i}" data-f="cierre.r${i}" rows="3">${esc(c['r' + i])}</textarea><span class="wc"><span data-wc="cierre.r${i}">${words(c['r' + i])}</span> palabras</span></div>`).join('')}
+    <div><label class="fld" for="f-concl">Conclusión técnica (entre 80 y 120 palabras)</label><textarea id="f-concl" data-f="cierre.concl" rows="7" style="min-height:170px">${esc(c.concl)}</textarea><span class="wc"><span data-wc="cierre.concl">${wc}</span> palabras · rango requerido: 80 a 120</span></div>
+    ${c.msg ? fbHTML(c.msg) : ''}
+    <div><button type="button" class="btn" id="btn-rep" data-a="rep-gen">${S.hecho.rep ? 'Actualizar el reporte' : 'Generar el reporte de aprendizaje'}</button></div>
+  </section>
+  ${S.hecho.rep ? `<section class="card stack" id="sec-rep">
+    <h3>Reporte de aprendizaje</h3>
+    <p class="small muted measure">Copia el reporte y pégalo en tu bitácora o en el aula virtual. Para imprimirlo, descárgalo o pégalo en un documento e imprime desde allí.</p>
+    <div class="row"><button type="button" class="btn" id="btn-copy" data-a="rep-copy">Copiar el reporte</button><button type="button" class="btn sec" id="btn-dl" data-a="rep-dl" ${DL ? '' : 'hidden'}>Descargar versión para imprimir (.html)</button><button type="button" class="btn sec" id="btn-print" data-a="rep-print" ${window.claude ? 'hidden' : ''}>Imprimir el reporte</button><span id="copy-msg" class="small" role="status" aria-live="polite"></span></div>
+    <pre class="rep" id="rep-txt" tabindex="0">${esc(reporte())}</pre>
+  </section>` : ''}
+  ${navRow(['n3', 'Nivel 3'], null)}`;
+}
+function repGen() {
+  const c = S.cierre, falt = [];
+  [0, 1, 2].forEach(i => { if (words(c['r' + i]) < 15) falt.push(`pregunta ${i + 1} (llevas ${words(c['r' + i])} de 15 palabras)`); });
+  const w = words(c.concl);
+  if (w < 80 || w > 120) falt.push(`conclusión técnica (tiene ${w} palabras; debe tener entre 80 y 120)`);
+  if (falt.length) { c.msg = { k: 'info', t: 'Para generar el reporte, completa: ' + falt.join('; ') + '.' }; return; }
+  const pend = doneCount(N1K) + doneCount(N2K) + doneCount(N3H) < 18;
+  S.hecho.rep = 1;
+  c.msg = { k: 'ok', t: 'Reporte generado.' + (pend ? ' Hay actividades sin completar: aparecen marcadas en el reporte. Puedes terminarlas y actualizarlo.' : '') };
+}
+function repHTMLDoc() {
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte · Biorefinería Challenge</title><style>body{font-family:Verdana,Arial,sans-serif;font-size:11pt;line-height:1.45;max-width:780px;margin:24px auto;padding:0 16px;color:#111}pre{white-space:pre-wrap;word-break:break-word;font-family:inherit}</style></head><body><pre>${esc(reporte())}</pre></body></html>`;
+}
+
+/* ===================== Render ===================== */
+const app = document.getElementById('app');
+let lastView = null;
+function render() {
+  const act = document.activeElement, fid = act && act.id ? act.id : null;
+  const selS = act && act.tagName === 'TEXTAREA' ? [act.selectionStart, act.selectionEnd] : null;
+  const v = S.view;
+  const body = v === 'inicio' ? vInicio() : v === 'n1' ? vN1() : v === 'n2' ? vN2() : v === 'n3' ? vN3() : vCierre();
+  app.innerHTML = `${header()}<main id="main">${confirmHTML()}${body}</main><footer class="ft"><p class="note-ia">${NOTA_IA}</p></footer>`;
+  if (lastView !== v) {
+    if (lastView !== null) { window.scrollTo(0, 0); const h = document.getElementById('vh'); if (h) h.focus({ preventScroll: true }); }
+    lastView = v;
+  } else if (fid) {
+    const el = document.getElementById(fid);
+    if (el && !el.disabled) { el.focus({ preventScroll: true }); if (selS && el.setSelectionRange) { try { el.setSelectionRange(selS[0], selS[1]); } catch (e) { } } }
+  }
+  if (S.confirm) { const b = document.getElementById('cf-no'); if (b) b.focus(); }
+  save();
+}
+
+/* ===================== Eventos ===================== */
+const ACT = {
+  go(d) { S.view = d.v; if (d.v !== 'inicio') S.started = true; },
+  start() { S.started = true; S.view = doneCount(N1K) === 5 ? (doneCount(N2K) === 8 ? 'n3' : 'n2') : 'n1'; },
+  'reset-ask'() { S.confirm = true; },
+  'reset-no'() { S.confirm = false; },
+  'reset-si'() { S = S0(); lastView = null; window.scrollTo(0, 0); },
+  'ch-pick'(d) { chPick(d.ch, +d.p, d.o); },
+  'ch-check'(d) { chCheck(d.ch); },
+  'n1-pick'(d) { const n = S.n1; n.msg = null; n.sel = n.sel === d.c ? null : d.c; },
+  'n1-slot'(d) {
+    const n = S.n1, L = n.lines[+d.l], t = d.t;
+    if (L.ok) return;
+    if (n.sel) {
+      if (n.sel[0] === t) n1Place(+d.l, n.sel);
+      else n.msg = `Esa tarjeta corresponde a la casilla «${n.sel[0] === 'r' ? 'Residuo' : n.sel[0] === 't' ? 'Tecnología' : 'Producto'}».`;
+    } else if (L[t]) { L[t] = null; L.bad = []; L.fb = null; }
+    else n.msg = 'Primero selecciona una tarjeta y después la casilla donde quieres colocarla.';
+  },
+  'n1-check'(d) { n1Check(+d.l); },
+  'n1-rep'() { S.n1 = freshN1(); S.n1.pract = true; delete S.ch.n1_casc; S.reps['Nivel 1'] = (S.reps['Nivel 1'] || 0) + 1; },
+  'n2-est'(d) { S.n2.est = d.e; },
+  'n2-tab'(d) { S.n2[S.n2.est].tab = d.t; },
+  'n2-etapa'(d) { n2Etapa(+d.i); },
+  'n2-ver'(d) { S.n2[S.n2.est].ver = +d.i; },
+  'n2-ref'() { const k = S.n2.est; EST[k].vars.forEach(v => { S.n2[k].vars[v.id] = v.ref; }); },
+  'n2-rep'() { const k = S.n2.est; S.n2[k] = freshEst(k); delete S.ch['n2_' + k + '_ch']; const nm = 'Estación ' + EST[k].corto; S.reps[nm] = (S.reps[nm] || 0) + 1; },
+  'n3-step'(d) { if (+d.i <= n3Max()) { S.n3.step = +d.i; S.n3.msg = null; } },
+  'n3-res'(d) {
+    const n = S.n3;
+    if (n.res === d.r) return;
+    if (n.res) { S.cambios++; delete S.ch.n3_via; delete S.ch.n3_out; n.mat = {}; n.dec = null; n.msg = null; }
+    n.res = d.r; S.hecho.n3_res = 1;
+  },
+  'n3-reg'() { n3Reg(); },
+  'rep-gen'() { repGen(); },
+  'rep-copy'() { copyReport(); return false; },
+  'rep-dl'() { dlReport(); return false; },
+  'rep-print'() { try { window.print(); } catch (e) { setMsg('La impresión no está disponible aquí. Copia el reporte y pégalo en un documento.'); } return false; }
+};
+function setMsg(t) { const m = document.getElementById('copy-msg'); if (m) m.textContent = t; }
+function copyReport() {
+  const txt = reporte();
+  const fallback = () => {
+    try {
+      const pre = document.getElementById('rep-txt'), r = document.createRange(); r.selectNodeContents(pre);
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      if (document.execCommand && document.execCommand('copy')) setMsg('✓ Reporte copiado al portapapeles.');
+      else setMsg('El texto quedó seleccionado: cópialo con Ctrl + C (o Cmd + C).');
+    } catch (e) { setMsg('No fue posible copiar de forma automática. Selecciona el texto del reporte y cópialo.'); }
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => setMsg('✓ Reporte copiado al portapapeles.'), fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+}
+function dlReport() {
+  if (!DL) return;
+  DL.save({ filename: 'reporte-biorefineria-challenge.html', data: repHTMLDoc() })
+    .then(() => setMsg('✓ Reporte descargado. Ábrelo e imprímelo desde tu navegador.'))
+    .catch((e) => setMsg(e && e.code === 'declined' ? 'Descarga cancelada.' : 'La descarga no está disponible aquí. Usa «Copiar el reporte».'));
+}
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
+  const f = ACT[b.dataset.a]; if (!f) return;
+  if (f(b.dataset) !== false) render();
+});
+document.addEventListener('change', (ev) => {
+  const el = ev.target, c = el.dataset && el.dataset.c; if (!c) return;
+  if (c === 'n2-var') { S.n2[S.n2.est].vars[el.dataset.v] = +el.value; }
+  else if (c === 'n3-mat') { S.n3.mat[el.dataset.k] = +el.value; if (matDone()) S.hecho.n3_mat = 1; }
+  else if (c === 'n3-dec') { S.n3.dec = el.value; }
+  else if (c === 'rub') { S.rub[el.dataset.i] = +el.value; }
+  render();
+});
+document.addEventListener('input', (ev) => {
+  const el = ev.target, f = el.dataset && el.dataset.f; if (!f) return;
+  const [a, b] = f.split('.'); S[a][b] = el.value;
+  const w = document.querySelector(`[data-wc="${f}"]`); if (w) w.textContent = words(el.value);
+  save();
+});
+/* Arrastrar y soltar (Nivel 1); el clic y el teclado ofrecen la misma función */
+document.addEventListener('dragstart', (ev) => {
+  const c = ev.target.closest && ev.target.closest('.cardbtn'); if (!c || c.disabled) return;
+  ev.dataTransfer.setData('text/plain', c.dataset.c); ev.dataTransfer.effectAllowed = 'move';
+});
+document.addEventListener('dragover', (ev) => { if (ev.target.closest && ev.target.closest('.slot')) ev.preventDefault(); });
+document.addEventListener('drop', (ev) => {
+  const s = ev.target.closest && ev.target.closest('.slot'); if (!s) return;
+  ev.preventDefault();
+  const id = ev.dataTransfer.getData('text/plain'); if (!id || !(id in RES || id in PRO || (id.slice(0, 2) === 't_' && id.slice(2) in TEC))) return;
+  if (id[0] !== s.dataset.t) { S.n1.msg = 'Esa tarjeta no corresponde a esa casilla.'; render(); return; }
+  n1Place(+s.dataset.l, id); render();
+});
+setInterval(() => {
+  if (!S.started || S.hecho.rep || document.hidden) return;
+  S.elapsed++; const r = document.getElementById('reloj'); if (r) r.textContent = fmtT(S.elapsed);
+  if (S.elapsed % 10 === 0) save();
+}, 1000);
+
+/* ===================== Arranque ===================== */
+function boot(d) {
+  if (d && d.view && d.n1 && d.n2 && d.n3) S = d; else { const o = load(); if (o) S = o; }
+  S.confirm = false;
+  render();
+}
+const HOT = window.claude && window.claude.hot;
+if (HOT && HOT.snapshot) { try { HOT.snapshot(() => S); } catch (e) { } }
+if (HOT && HOT.ready) HOT.ready(boot); else boot(HOT && HOT.data ? HOT.data : null);
+if (window.claude && window.claude.use) {
+  window.claude.use('downloads').then((d) => { DL = d || null; const b = document.getElementById('btn-dl'); if (b && DL) b.hidden = false; }).catch(() => { });
+}
+</script>
+</body>
+</html>
